@@ -224,47 +224,101 @@ export default function App() {
   }, [selectedSymbol]);
 
   useEffect(() => {
-    fetch('./Dashboard_Data/index.json')
-      .then((res) => (res.ok ? res.json() : null))
+    const baseUrl = import.meta.env.BASE_URL || './';
+    const normalizedBase = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+    const indexUrl = `${normalizedBase}Dashboard_Data/index.json`;
+
+    fetch(indexUrl)
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
       .then((indexList) => {
-        if (!Array.isArray(indexList) || indexList.length === 0) return;
+        if (!Array.isArray(indexList) || indexList.length === 0) {
+          setCodalStatus({ type: 'error', text: 'فایل index.json خالی است یا فرمت آرایه ندارد.' });
+          return;
+        }
+
+        const loadedTickers: string[] = [];
         setSymbolsRegistry((prev) => {
-          const next: Record<string, SymbolProfile> = {};
+          const next: Record<string, SymbolProfile> = { ...prev };
           for (const meta of indexList) {
             const t = String(meta.ticker || '').trim();
             if (!t) continue;
+            loadedTickers.push(t);
             const existing = Object.values(prev).find((item) => item.ticker === t);
             next[t] = existing
-              ? { ...existing, key: t, tseIndustryGroup: meta.industry || existing.tseIndustryGroup }
-              : createDynamicSymbolProfile(t, `شرکت ${t}`, meta.industry || 'سایر صنایع بورس');
+              ? {
+                  ...existing,
+                  key: t,
+                  ticker: t,
+                  fullName: (meta as any).company_name || (meta as any).fullName || existing.fullName,
+                  tseIndustryGroup: meta.industry || existing.tseIndustryGroup,
+                }
+              : createDynamicSymbolProfile(
+                  t,
+                  (meta as any).company_name || `شرکت ${t}`,
+                  meta.industry || 'سایر صنایع بورس'
+                );
           }
-          return Object.keys(next).length > 0 ? next : prev;
+          return next;
         });
-        const firstTicker = String(indexList[0].ticker || '').trim();
-        if (firstTicker) setSelectedSymbol(firstTicker);
+
+        setCodalStatus({
+          type: 'success',
+          text: `${loadedTickers.length} نماد از Dashboard_Data/index.json بارگذاری شد (${loadedTickers.join('، ')})`,
+        });
+
+        if (loadedTickers.length > 0) {
+          setSelectedSymbol(loadedTickers[0]);
+        }
       })
-      .catch(() => {});
+      .catch((err) => {
+        setCodalStatus({
+          type: 'error',
+          text: `عدم دسترسی به Dashboard_Data/index.json (${err.message}) — مطمئن شوید پوشه Dashboard_Data در dist کپی شده است.`,
+        });
+      });
   }, []);
 
   useEffect(() => {
-    const tickerName = activeConfig?.ticker || selectedSymbol;
+    const cfg = symbolsRegistry[selectedSymbol] || SYMBOLS_CONFIG.kala;
+    const tickerName = String(cfg?.ticker || selectedSymbol || '').trim();
     if (!tickerName) return;
 
-    fetch(`./Dashboard_Data/${encodeURIComponent(tickerName)}_Archive.json`)
-      .then((res) => (res.ok ? res.json() : null))
+    const baseUrl = import.meta.env.BASE_URL || './';
+    const normalizedBase = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+    const archiveUrl = `${normalizedBase}Dashboard_Data/${encodeURIComponent(tickerName)}_Archive.json`;
+
+    fetch(archiveUrl)
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
       .then((rawArchive) => {
         if (!rawArchive) return;
         const mapped = mapPythonArchiveToDashboard(rawArchive);
-        setFundStore(mapped.fundStore);
-        setInterpretiveList(mapped.interpretiveList);
-        setLiveDisclosures(mapped.disclosuresList);
-        setCodalList(mapped.codalAnnouncements);
+        if (mapped?.fundStore) setFundStore(mapped.fundStore);
+        if (Array.isArray(mapped?.interpretiveList) && mapped.interpretiveList.length > 0) {
+          setInterpretiveList(mapped.interpretiveList);
+        }
+        if (Array.isArray(mapped?.disclosuresList)) {
+          setLiveDisclosures(mapped.disclosuresList);
+        }
+        if (Array.isArray(mapped?.codalAnnouncements)) {
+          setCodalList(mapped.codalAnnouncements);
+        }
         setCodalStatus({
           type: 'success',
-          text: `دیتابیس آفلاین ${tickerName} بارگذاری شد (${rawArchive.meta?.counts?.monthly_sales || 0} ماهانه | ${rawArchive.meta?.counts?.financial_statements || 0} صورت مالی | ${rawArchive.meta?.counts?.interpretive_reports || 0} PDF تفسیری)`
+          text: `دیتابیس آفلاین ${tickerName} بارگذاری شد (${rawArchive.meta?.counts?.monthly_sales || 0} ماهانه | ${rawArchive.meta?.counts?.financial_statements || 0} صورت مالی | ${rawArchive.meta?.counts?.interpretive_reports || 0} PDF تفسیری)`,
         });
       })
-      .catch(() => {});
+      .catch((err) => {
+        setCodalStatus({
+          type: 'error',
+          text: `خطا در بارگذاری آرشیو ${tickerName} (${err.message})`,
+        });
+      });
   }, [selectedSymbol]);
 
   useEffect(() => { setCodalPage(1); }, [codalSearch, codalYearFilter]);
@@ -449,7 +503,6 @@ export default function App() {
     }
   };
 
-  // دریافت هوشمند و کم‌مصرف (۳ درخواست: ماهانه، صورت مالی، افشای اطلاعات)
   const handleSyncCodal = async () => {
     setCodalLoading(true);
     setCodalStatus({ type: 'loading', text: `در حال دریافت هوشمند گزارش‌های کدال ${activeConfig.ticker} (${activeConfig.fullName})...` });
