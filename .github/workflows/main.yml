@@ -32,7 +32,7 @@ jobs:
 
       - name: Build
         run: npm run build
-        - name: Copy Dashboard_Data to dist
+      - name: Copy Dashboard_Data to dist
         run: cp -r Dashboard_Data ./dist/Dashboard_Data
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
