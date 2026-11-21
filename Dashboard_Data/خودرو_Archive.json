@@ -1,0 +1,1491 @@
+{
+  "meta": {
+    "ticker": "خودرو",
+    "industry": "خودرو و ساخت قطعات",
+    "generated_at": "2026-11-21T14:09:34.566482",
+    "counts": {
+      "monthly_sales": 54,
+      "financial_statements": 18,
+      "important_disclosures": 77,
+      "interpretive_reports": 6
+    }
+  },
+  "monthly_sales": [
+    {
+      "period": "1400/12",
+      "monthly_revenue": 492006182.0,
+      "ytd_revenue": 670802591.0,
+      "prev_ytd_revenue": null,
+      "is_revision": true,
+      "publish_date": "1401/03/25 11:25:03",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1400/12/29(اصلاحیه)"
+    },
+    {
+      "period": "1401/01",
+      "monthly_revenue": 62760878.0,
+      "ytd_revenue": 44731694.0,
+      "prev_ytd_revenue": null,
+      "is_revision": false,
+      "publish_date": "1401/02/07 14:28:26",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1401/01/31"
+    },
+    {
+      "period": "1401/02",
+      "monthly_revenue": 90817447.0,
+      "ytd_revenue": 66214267.0,
+      "prev_ytd_revenue": null,
+      "is_revision": false,
+      "publish_date": "1401/03/07 10:31:01",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1401/02/31"
+    },
+    {
+      "period": "1401/03",
+      "monthly_revenue": 184301545.0,
+      "ytd_revenue": 194469091.0,
+      "prev_ytd_revenue": null,
+      "is_revision": true,
+      "publish_date": "1401/04/29 18:51:08",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1401/03/31(اصلاحیه)"
+    },
+    {
+      "period": "1401/04",
+      "monthly_revenue": 91833706.0,
+      "ytd_revenue": 174133345.0,
+      "prev_ytd_revenue": null,
+      "is_revision": false,
+      "publish_date": "1401/05/02 15:52:51",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1401/04/31"
+    },
+    {
+      "period": "1401/05",
+      "monthly_revenue": 94120748.0,
+      "ytd_revenue": 219994697.0,
+      "prev_ytd_revenue": null,
+      "is_revision": false,
+      "publish_date": "1401/06/05 10:13:50",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1401/05/31"
+    },
+    {
+      "period": "1401/06",
+      "monthly_revenue": 190536700.0,
+      "ytd_revenue": 464379607.0,
+      "prev_ytd_revenue": null,
+      "is_revision": true,
+      "publish_date": "1401/11/04 09:59:10",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1401/06/31(اصلاحیه)"
+    },
+    {
+      "period": "1401/07",
+      "monthly_revenue": 109280650.0,
+      "ytd_revenue": 518700195.0,
+      "prev_ytd_revenue": null,
+      "is_revision": true,
+      "publish_date": "1401/11/05 15:51:58",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1401/07/30(اصلاحیه)"
+    },
+    {
+      "period": "1401/08",
+      "monthly_revenue": 137572087.0,
+      "ytd_revenue": 588984742.0,
+      "prev_ytd_revenue": null,
+      "is_revision": true,
+      "publish_date": "1401/11/05 16:15:50",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1401/08/30(اصلاحیه)"
+    },
+    {
+      "period": "1401/09",
+      "monthly_revenue": 279595037.0,
+      "ytd_revenue": 742360021.0,
+      "prev_ytd_revenue": null,
+      "is_revision": true,
+      "publish_date": "1401/11/05 16:38:20",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1401/09/30(اصلاحیه)"
+    },
+    {
+      "period": "1401/10",
+      "monthly_revenue": 125759349.0,
+      "ytd_revenue": 840277645.0,
+      "prev_ytd_revenue": null,
+      "is_revision": false,
+      "publish_date": "1401/11/05 17:43:15",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1401/10/30"
+    },
+    {
+      "period": "1401/11",
+      "monthly_revenue": 153574379.0,
+      "ytd_revenue": 901642474.0,
+      "prev_ytd_revenue": null,
+      "is_revision": false,
+      "publish_date": "1401/12/06 15:11:54",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1401/11/30"
+    },
+    {
+      "period": "1401/12",
+      "monthly_revenue": 295052189.0,
+      "ytd_revenue": 1098571317.0,
+      "prev_ytd_revenue": null,
+      "is_revision": true,
+      "publish_date": "1402/03/25 15:48:45",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1401/12/29(اصلاحیه)"
+    },
+    {
+      "period": "1402/01",
+      "monthly_revenue": 40789816.0,
+      "ytd_revenue": 62760878.0,
+      "prev_ytd_revenue": null,
+      "is_revision": false,
+      "publish_date": "1402/02/09 13:21:34",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1402/01/31"
+    },
+    {
+      "period": "1402/02",
+      "monthly_revenue": 144342254.0,
+      "ytd_revenue": 153578325.0,
+      "prev_ytd_revenue": null,
+      "is_revision": false,
+      "publish_date": "1402/03/06 17:47:28",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1402/02/31"
+    },
+    {
+      "period": "1402/03",
+      "monthly_revenue": 350467378.0,
+      "ytd_revenue": 422390274.0,
+      "prev_ytd_revenue": null,
+      "is_revision": true,
+      "publish_date": "1402/04/30 14:52:52",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1402/03/31(اصلاحیه)"
+    },
+    {
+      "period": "1402/04",
+      "monthly_revenue": 188071239.0,
+      "ytd_revenue": 514223980.0,
+      "prev_ytd_revenue": null,
+      "is_revision": false,
+      "publish_date": "1402/05/04 08:56:53",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1402/04/31"
+    },
+    {
+      "period": "1402/05",
+      "monthly_revenue": 91579697.0,
+      "ytd_revenue": 608344728.0,
+      "prev_ytd_revenue": null,
+      "is_revision": false,
+      "publish_date": "1402/06/05 14:43:01",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1402/05/31"
+    },
+    {
+      "period": "1402/06",
+      "monthly_revenue": 324941082.0,
+      "ytd_revenue": 798881428.0,
+      "prev_ytd_revenue": null,
+      "is_revision": true,
+      "publish_date": "1402/11/28 14:41:29",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1402/06/31(اصلاحیه)"
+    },
+    {
+      "period": "1402/07",
+      "monthly_revenue": 189408994.0,
+      "ytd_revenue": 887633799.0,
+      "prev_ytd_revenue": null,
+      "is_revision": true,
+      "publish_date": "1402/12/07 10:29:18",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1402/07/30(اصلاحیه)"
+    },
+    {
+      "period": "1402/08",
+      "monthly_revenue": 248494109.0,
+      "ytd_revenue": 1004677608.0,
+      "prev_ytd_revenue": null,
+      "is_revision": true,
+      "publish_date": "1402/12/07 10:39:45",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1402/08/30(اصلاحیه)"
+    },
+    {
+      "period": "1402/09",
+      "monthly_revenue": 254928194.0,
+      "ytd_revenue": 1284271445.0,
+      "prev_ytd_revenue": null,
+      "is_revision": true,
+      "publish_date": "1402/12/07 10:53:06",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1402/09/30(اصلاحیه)"
+    },
+    {
+      "period": "1402/10",
+      "monthly_revenue": 248662812.0,
+      "ytd_revenue": 1410030794.0,
+      "prev_ytd_revenue": null,
+      "is_revision": true,
+      "publish_date": "1402/12/07 11:00:15",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1402/10/30(اصلاحیه)"
+    },
+    {
+      "period": "1402/11",
+      "monthly_revenue": 222761852.0,
+      "ytd_revenue": 1563605173.0,
+      "prev_ytd_revenue": null,
+      "is_revision": false,
+      "publish_date": "1402/12/07 11:58:46",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1402/11/30"
+    },
+    {
+      "period": "1402/12",
+      "monthly_revenue": 232963928.0,
+      "ytd_revenue": 1881503420.0,
+      "prev_ytd_revenue": null,
+      "is_revision": true,
+      "publish_date": "1403/02/29 17:32:13",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1402/12/29(اصلاحیه)"
+    },
+    {
+      "period": "1403/02",
+      "monthly_revenue": 246662224.0,
+      "ytd_revenue": 292566567.0,
+      "prev_ytd_revenue": null,
+      "is_revision": true,
+      "publish_date": "1403/03/08 15:10:57",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1403/02/31(اصلاحیه)"
+    },
+    {
+      "period": "1403/03",
+      "monthly_revenue": 275949736.0,
+      "ytd_revenue": 535606884.0,
+      "prev_ytd_revenue": null,
+      "is_revision": true,
+      "publish_date": "1403/04/30 19:19:26",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1403/03/31(اصلاحیه)"
+    },
+    {
+      "period": "1403/04",
+      "monthly_revenue": 267936865.0,
+      "ytd_revenue": 723678123.0,
+      "prev_ytd_revenue": null,
+      "is_revision": false,
+      "publish_date": "1403/05/03 15:20:10",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1403/04/31"
+    },
+    {
+      "period": "1403/05",
+      "monthly_revenue": 234549224.0,
+      "ytd_revenue": 807208378.0,
+      "prev_ytd_revenue": null,
+      "is_revision": false,
+      "publish_date": "1403/06/07 10:34:12",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1403/05/31"
+    },
+    {
+      "period": "1403/06",
+      "monthly_revenue": 239757188.0,
+      "ytd_revenue": 1128299834.0,
+      "prev_ytd_revenue": null,
+      "is_revision": true,
+      "publish_date": "1403/07/30 14:24:27",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1403/06/31(اصلاحیه)"
+    },
+    {
+      "period": "1403/07",
+      "monthly_revenue": 280996624.0,
+      "ytd_revenue": 1317708828.0,
+      "prev_ytd_revenue": null,
+      "is_revision": false,
+      "publish_date": "1403/08/06 16:00:38",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1403/07/30"
+    },
+    {
+      "period": "1403/08",
+      "monthly_revenue": 245462583.0,
+      "ytd_revenue": 1566620827.0,
+      "prev_ytd_revenue": null,
+      "is_revision": true,
+      "publish_date": "1403/09/17 14:39:04",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1403/08/30(اصلاحیه)"
+    },
+    {
+      "period": "1403/09",
+      "monthly_revenue": 250587341.0,
+      "ytd_revenue": 1796441937.0,
+      "prev_ytd_revenue": null,
+      "is_revision": true,
+      "publish_date": "1403/10/29 17:58:42",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1403/09/30(اصلاحیه)"
+    },
+    {
+      "period": "1403/10",
+      "monthly_revenue": 297903127.0,
+      "ytd_revenue": 2045104749.0,
+      "prev_ytd_revenue": null,
+      "is_revision": false,
+      "publish_date": "1403/11/06 15:07:17",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1403/10/30"
+    },
+    {
+      "period": "1403/11",
+      "monthly_revenue": 402059245.0,
+      "ytd_revenue": 2267866691.0,
+      "prev_ytd_revenue": null,
+      "is_revision": false,
+      "publish_date": "1403/12/06 17:05:43",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1403/11/30"
+    },
+    {
+      "period": "1403/12",
+      "monthly_revenue": 433631457.0,
+      "ytd_revenue": 2540145669.0,
+      "prev_ytd_revenue": null,
+      "is_revision": true,
+      "publish_date": "1404/03/27 14:23:29",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1403/12/30(اصلاحیه)"
+    },
+    {
+      "period": "1404/01",
+      "monthly_revenue": 189951157.0,
+      "ytd_revenue": 112672640.0,
+      "prev_ytd_revenue": null,
+      "is_revision": false,
+      "publish_date": "1404/02/07 13:32:30",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1404/01/31"
+    },
+    {
+      "period": "1404/02",
+      "monthly_revenue": 386667683.0,
+      "ytd_revenue": 369140522.0,
+      "prev_ytd_revenue": null,
+      "is_revision": true,
+      "publish_date": "1404/03/08 11:22:48",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1404/02/31(اصلاحیه)"
+    },
+    {
+      "period": "1404/04",
+      "monthly_revenue": 276100367.0,
+      "ytd_revenue": 913027123.0,
+      "prev_ytd_revenue": null,
+      "is_revision": false,
+      "publish_date": "1404/05/07 15:52:19",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1404/04/31"
+    },
+    {
+      "period": "1404/05",
+      "monthly_revenue": 390908471.0,
+      "ytd_revenue": 1147576347.0,
+      "prev_ytd_revenue": null,
+      "is_revision": false,
+      "publish_date": "1404/06/08 11:21:28",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1404/05/31"
+    },
+    {
+      "period": "1404/06",
+      "monthly_revenue": 520845445.0,
+      "ytd_revenue": 1394001949.0,
+      "prev_ytd_revenue": null,
+      "is_revision": true,
+      "publish_date": "1404/12/03 10:43:22",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1404/06/31(اصلاحیه)"
+    },
+    {
+      "period": "1404/07",
+      "monthly_revenue": 480807268.0,
+      "ytd_revenue": 1674998573.0,
+      "prev_ytd_revenue": null,
+      "is_revision": false,
+      "publish_date": "1404/08/07 15:41:45",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1404/07/30"
+    },
+    {
+      "period": "1404/08",
+      "monthly_revenue": 562505004.0,
+      "ytd_revenue": 1920461156.0,
+      "prev_ytd_revenue": null,
+      "is_revision": false,
+      "publish_date": "1404/09/08 11:29:24",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1404/08/30"
+    },
+    {
+      "period": "1404/09",
+      "monthly_revenue": 544236478.0,
+      "ytd_revenue": 2171778353.0,
+      "prev_ytd_revenue": null,
+      "is_revision": false,
+      "publish_date": "1404/10/07 16:51:59",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1404/09/30"
+    },
+    {
+      "period": "1404/10",
+      "monthly_revenue": 509327250.0,
+      "ytd_revenue": 2469681480.0,
+      "prev_ytd_revenue": null,
+      "is_revision": true,
+      "publish_date": "1404/12/05 10:09:37",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1404/10/30(اصلاحیه)"
+    },
+    {
+      "period": "1404/11",
+      "monthly_revenue": 536575826.0,
+      "ytd_revenue": 2871740725.0,
+      "prev_ytd_revenue": null,
+      "is_revision": false,
+      "publish_date": "1404/12/06 13:20:15",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1404/11/30"
+    },
+    {
+      "period": "1404/12",
+      "monthly_revenue": 347763062.0,
+      "ytd_revenue": 3315356109.0,
+      "prev_ytd_revenue": null,
+      "is_revision": true,
+      "publish_date": "1405/04/10 15:09:04",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1404/12/29(اصلاحیه)"
+    },
+    {
+      "period": "1405/01",
+      "monthly_revenue": 152396194.0,
+      "ytd_revenue": 189951157.0,
+      "prev_ytd_revenue": null,
+      "is_revision": true,
+      "publish_date": "1405/03/05 16:39:17",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1405/01/31(اصلاحیه)"
+    },
+    {
+      "period": "1405/02",
+      "monthly_revenue": 555232706.0,
+      "ytd_revenue": 576618840.0,
+      "prev_ytd_revenue": null,
+      "is_revision": false,
+      "publish_date": "1405/03/09 15:21:40",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1405/02/31"
+    },
+    {
+      "period": "1405/03",
+      "monthly_revenue": 429244503.0,
+      "ytd_revenue": 919486617.0,
+      "prev_ytd_revenue": null,
+      "is_revision": true,
+      "publish_date": "1405/04/31 14:56:14",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1405/03/31(اصلاحیه)"
+    },
+    {
+      "period": "1405/04",
+      "monthly_revenue": 679869813.0,
+      "ytd_revenue": 1195586984.0,
+      "prev_ytd_revenue": null,
+      "is_revision": false,
+      "publish_date": "1405/05/06 16:29:36",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1405/04/31"
+    },
+    {
+      "period": "1405/05",
+      "monthly_revenue": 631098415.0,
+      "ytd_revenue": 1586495455.0,
+      "prev_ytd_revenue": null,
+      "is_revision": false,
+      "publish_date": "1405/06/05 09:14:47",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1405/05/31"
+    },
+    {
+      "period": "1405/06",
+      "monthly_revenue": 834074221.0,
+      "ytd_revenue": 2121239989.0,
+      "prev_ytd_revenue": null,
+      "is_revision": true,
+      "publish_date": "1405/07/23 13:24:50",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1405/06/31(اصلاحیه)"
+    },
+    {
+      "period": "1405/07",
+      "monthly_revenue": 607251783.0,
+      "ytd_revenue": 2602047257.0,
+      "prev_ytd_revenue": null,
+      "is_revision": false,
+      "publish_date": "1405/08/06 08:33:55",
+      "title": "گزارش فعالیت ماهانه دوره 1 ماهه منتهی به 1405/07/30"
+    }
+  ],
+  "financial_statements": [
+    {
+      "period": "1400_12M",
+      "is_audited": true,
+      "revenue": 1098571317.0,
+      "cost_of_revenue": -1154669968.0,
+      "gross_profit": -56098651.0,
+      "operating_profit": -73053454.0,
+      "financial_expense": null,
+      "net_profit": -110937040.0,
+      "current_assets": 367934979.0,
+      "inventory": 130856924.0,
+      "receivables": 189908381.0,
+      "cash": 39952853.0,
+      "non_current_assets": 403776275.0,
+      "total_assets": 771711254.0,
+      "current_liabilities": 835257393.0,
+      "non_current_liabilities": 47115661.0,
+      "total_liabilities": 882373054.0,
+      "share_capital": 301656068.0,
+      "retained_earnings": -410323542.0,
+      "total_equity": -110661800.0,
+      "operating_cash_flow": 45917168.0,
+      "capex": -2724022.0,
+      "is_revision": false,
+      "publish_date": "1401/04/27 23:50:40",
+      "title": "صورت های مالی تلفیقی سال مالی منتهی به 1400/12/29 (حسابرسی شده)"
+    },
+    {
+      "period": "1401_03M",
+      "is_audited": false,
+      "revenue": 422390274.0,
+      "cost_of_revenue": -424964176.0,
+      "gross_profit": -2573902.0,
+      "operating_profit": -10259101.0,
+      "financial_expense": null,
+      "net_profit": -19510254.0,
+      "current_assets": 350601592.0,
+      "inventory": 89756208.0,
+      "receivables": 220036084.0,
+      "cash": 34210546.0,
+      "non_current_assets": 404141709.0,
+      "total_assets": 754743301.0,
+      "current_liabilities": 835782661.0,
+      "non_current_liabilities": 49132694.0,
+      "total_liabilities": 884915355.0,
+      "share_capital": 301656068.0,
+      "retained_earnings": -429833796.0,
+      "total_equity": -130172054.0,
+      "operating_cash_flow": -3222434.0,
+      "capex": -901847.0,
+      "is_revision": false,
+      "publish_date": "1401/04/29 20:33:20",
+      "title": "اطلاعات و صورت های مالی میاندوره ای دوره 3 ماهه منتهی به 1401/03/31 (حسابرسی نشده)"
+    },
+    {
+      "period": "1401_06M",
+      "is_audited": true,
+      "revenue": 798881428.0,
+      "cost_of_revenue": -858305630.0,
+      "gross_profit": -59424202.0,
+      "operating_profit": 25852473.0,
+      "financial_expense": null,
+      "net_profit": -1113729.0,
+      "current_assets": 441518387.0,
+      "inventory": 122394047.0,
+      "receivables": 256044237.0,
+      "cash": 39400648.0,
+      "non_current_assets": 439966490.0,
+      "total_assets": 881484877.0,
+      "current_liabilities": 924113983.0,
+      "non_current_liabilities": 69146423.0,
+      "total_liabilities": 993260406.0,
+      "share_capital": 301656068.0,
+      "retained_earnings": -411437271.0,
+      "total_equity": -111775529.0,
+      "operating_cash_flow": 24966831.0,
+      "capex": -2323629.0,
+      "is_revision": false,
+      "publish_date": "1401/11/10 14:21:11",
+      "title": "اطلاعات و صورت های مالی میاندوره ای تلفیقی دوره 6 ماهه منتهی به 1401/06/31 (حسابرسی شده)"
+    },
+    {
+      "period": "1401_09M",
+      "is_audited": false,
+      "revenue": 1284271445.0,
+      "cost_of_revenue": -1381919002.0,
+      "gross_profit": -97647557.0,
+      "operating_profit": 36510159.0,
+      "financial_expense": null,
+      "net_profit": 1142805.0,
+      "current_assets": 489093011.0,
+      "inventory": 128698349.0,
+      "receivables": 291542714.0,
+      "cash": 33153203.0,
+      "non_current_assets": 461095727.0,
+      "total_assets": 950188738.0,
+      "current_liabilities": 991981073.0,
+      "non_current_liabilities": 67726660.0,
+      "total_liabilities": 1059707733.0,
+      "share_capital": 301656068.0,
+      "retained_earnings": -409180737.0,
+      "total_equity": -109518995.0,
+      "operating_cash_flow": 39405639.0,
+      "capex": -2788355.0,
+      "is_revision": false,
+      "publish_date": "1401/10/30 09:59:39",
+      "title": "اطلاعات و صورت های مالی میاندوره ای دوره 9 ماهه منتهی به 1401/09/30 (حسابرسی نشده)"
+    },
+    {
+      "period": "1401_12M",
+      "is_audited": true,
+      "revenue": 1881503420.0,
+      "cost_of_revenue": -2086602675.0,
+      "gross_profit": -205099255.0,
+      "operating_profit": -302206775.0,
+      "financial_expense": null,
+      "net_profit": -319636009.0,
+      "current_assets": 397999573.0,
+      "inventory": 128360007.0,
+      "receivables": 157126473.0,
+      "cash": 91092365.0,
+      "non_current_assets": 471654438.0,
+      "total_assets": 869654011.0,
+      "current_liabilities": 1251649912.0,
+      "non_current_liabilities": 57414632.0,
+      "total_liabilities": 1309064544.0,
+      "share_capital": 301656068.0,
+      "retained_earnings": -739072275.0,
+      "total_equity": -439410533.0,
+      "operating_cash_flow": 92235017.0,
+      "capex": -5512975.0,
+      "is_revision": false,
+      "publish_date": "1402/05/01 12:47:23",
+      "title": "صورت های مالی تلفیقی سال مالی منتهی به 1401/12/29 (حسابرسی شده)"
+    },
+    {
+      "period": "1402_03M",
+      "is_audited": false,
+      "revenue": 535606884.0,
+      "cost_of_revenue": -584274328.0,
+      "gross_profit": -48667444.0,
+      "operating_profit": -75329562.0,
+      "financial_expense": null,
+      "net_profit": -91302114.0,
+      "current_assets": 362936039.0,
+      "inventory": 107509959.0,
+      "receivables": 169145214.0,
+      "cash": 78065452.0,
+      "non_current_assets": 470714431.0,
+      "total_assets": 833650470.0,
+      "current_liabilities": 1294158689.0,
+      "non_current_liabilities": 70204428.0,
+      "total_liabilities": 1364363117.0,
+      "share_capital": 301656068.0,
+      "retained_earnings": -830374389.0,
+      "total_equity": -530712647.0,
+      "operating_cash_flow": -1722636.0,
+      "capex": -286210.0,
+      "is_revision": false,
+      "publish_date": "1402/05/01 16:28:20",
+      "title": "اطلاعات و صورت های مالی میاندوره ای دوره 3 ماهه منتهی به 1402/03/31 (حسابرسی نشده)"
+    },
+    {
+      "period": "1402_09M",
+      "is_audited": false,
+      "revenue": 1796441937.0,
+      "cost_of_revenue": -1993010975.0,
+      "gross_profit": -196569038.0,
+      "operating_profit": -247852565.0,
+      "financial_expense": null,
+      "net_profit": -301357447.0,
+      "current_assets": 532668743.0,
+      "inventory": 231899589.0,
+      "receivables": 160919404.0,
+      "cash": 69182858.0,
+      "non_current_assets": 493851482.0,
+      "total_assets": 1026520225.0,
+      "current_liabilities": 1696489458.0,
+      "non_current_liabilities": 70798747.0,
+      "total_liabilities": 1767288205.0,
+      "share_capital": 301656068.0,
+      "retained_earnings": -1040429722.0,
+      "total_equity": -740767980.0,
+      "operating_cash_flow": 2253998.0,
+      "capex": -646426.0,
+      "is_revision": false,
+      "publish_date": "1402/10/30 22:04:49",
+      "title": "اطلاعات و صورت های مالی میاندوره ای دوره 9 ماهه منتهی به 1402/09/30 (حسابرسی نشده)"
+    },
+    {
+      "period": "1402_12M",
+      "is_audited": true,
+      "revenue": null,
+      "cost_of_revenue": null,
+      "gross_profit": null,
+      "operating_profit": null,
+      "financial_expense": null,
+      "net_profit": null,
+      "current_assets": 480452938.0,
+      "inventory": 130208751.0,
+      "receivables": 186631785.0,
+      "cash": 84585115.0,
+      "non_current_assets": 518067609.0,
+      "total_assets": 998520547.0,
+      "current_liabilities": 1734941199.0,
+      "non_current_liabilities": 67530241.0,
+      "total_liabilities": 1802471440.0,
+      "share_capital": 301656068.0,
+      "retained_earnings": -1103612635.0,
+      "total_equity": -803950893.0,
+      "operating_cash_flow": 26570148.0,
+      "capex": -13931062.0,
+      "is_revision": false,
+      "publish_date": "1403/04/31 01:02:52",
+      "title": "صورت های مالی تلفیقی سال مالی منتهی به 1402/12/29 (حسابرسی شده)"
+    },
+    {
+      "period": "1403_03M",
+      "is_audited": false,
+      "revenue": 645090258.0,
+      "cost_of_revenue": -663161100.0,
+      "gross_profit": -18070842.0,
+      "operating_profit": -30372315.0,
+      "financial_expense": null,
+      "net_profit": -56365758.0,
+      "current_assets": 513215069.0,
+      "inventory": 166318167.0,
+      "receivables": 184250747.0,
+      "cash": 89632957.0,
+      "non_current_assets": 511867698.0,
+      "total_assets": 1025082767.0,
+      "current_liabilities": 1804179730.0,
+      "non_current_liabilities": 81219688.0,
+      "total_liabilities": 1885399418.0,
+      "share_capital": 301656068.0,
+      "retained_earnings": -1159978393.0,
+      "total_equity": -860316651.0,
+      "operating_cash_flow": 8742873.0,
+      "capex": -2493901.0,
+      "is_revision": false,
+      "publish_date": "1403/04/30 23:54:05",
+      "title": "اطلاعات و صورت های مالی میاندوره ای دوره 3 ماهه منتهی به 1403/03/31 (حسابرسی نشده)"
+    },
+    {
+      "period": "1403_06M",
+      "is_audited": true,
+      "revenue": null,
+      "cost_of_revenue": null,
+      "gross_profit": null,
+      "operating_profit": null,
+      "financial_expense": null,
+      "net_profit": null,
+      "current_assets": 628171196.0,
+      "inventory": 170517666.0,
+      "receivables": 213820468.0,
+      "cash": 142167893.0,
+      "non_current_assets": 537915977.0,
+      "total_assets": 1166087173.0,
+      "current_liabilities": 2012531398.0,
+      "non_current_liabilities": 72354517.0,
+      "total_liabilities": 2084885915.0,
+      "share_capital": 301656068.0,
+      "retained_earnings": -1218460484.0,
+      "total_equity": -918798742.0,
+      "operating_cash_flow": null,
+      "capex": null,
+      "is_revision": false,
+      "publish_date": "1403/11/30 23:28:44",
+      "title": "اطلاعات و صورت های مالی میاندوره ای تلفیقی دوره 6 ماهه منتهی به 1403/06/31 (حسابرسی شده)"
+    },
+    {
+      "period": "1403_09M",
+      "is_audited": false,
+      "revenue": null,
+      "cost_of_revenue": null,
+      "gross_profit": null,
+      "operating_profit": null,
+      "financial_expense": null,
+      "net_profit": null,
+      "current_assets": null,
+      "inventory": null,
+      "receivables": null,
+      "cash": null,
+      "non_current_assets": null,
+      "total_assets": null,
+      "current_liabilities": null,
+      "non_current_liabilities": null,
+      "total_liabilities": null,
+      "share_capital": null,
+      "retained_earnings": null,
+      "total_equity": null,
+      "operating_cash_flow": 17280042.0,
+      "capex": -8980450.0,
+      "is_revision": false,
+      "publish_date": "1403/10/30 21:33:51",
+      "title": "اطلاعات و صورت های مالی میاندوره ای دوره 9 ماهه منتهی به 1403/09/30 (حسابرسی نشده)"
+    },
+    {
+      "period": "1403_12M",
+      "is_audited": true,
+      "revenue": 3315356109.0,
+      "cost_of_revenue": -3315890420.0,
+      "gross_profit": -534311.0,
+      "operating_profit": -132260934.0,
+      "financial_expense": null,
+      "net_profit": -196540736.0,
+      "current_assets": 648012428.0,
+      "inventory": 208755492.0,
+      "receivables": 210258943.0,
+      "cash": 162656860.0,
+      "non_current_assets": 3118224386.0,
+      "total_assets": 3766236814.0,
+      "current_liabilities": 2205015145.0,
+      "non_current_liabilities": 204865066.0,
+      "total_liabilities": 2409880211.0,
+      "share_capital": 2563746068.0,
+      "retained_earnings": -1205395139.0,
+      "total_equity": 1356356603.0,
+      "operating_cash_flow": 103194150.0,
+      "capex": -14565465.0,
+      "is_revision": false,
+      "publish_date": "1404/04/31 07:46:22",
+      "title": "صورت های مالی تلفیقی سال مالی منتهی به 1403/12/30 (حسابرسی شده)"
+    },
+    {
+      "period": "1404_03M",
+      "is_audited": false,
+      "revenue": 919486617.0,
+      "cost_of_revenue": -919774158.0,
+      "gross_profit": -287541.0,
+      "operating_profit": -64198484.0,
+      "financial_expense": null,
+      "net_profit": -95445696.0,
+      "current_assets": 724532378.0,
+      "inventory": 233764174.0,
+      "receivables": 252581175.0,
+      "cash": 102603191.0,
+      "non_current_assets": 3114520489.0,
+      "total_assets": 3839052867.0,
+      "current_liabilities": 2350807040.0,
+      "non_current_liabilities": 227334920.0,
+      "total_liabilities": 2578141960.0,
+      "share_capital": 2563746068.0,
+      "retained_earnings": -1300840835.0,
+      "total_equity": 1260910907.0,
+      "operating_cash_flow": -31241629.0,
+      "capex": 0.0,
+      "is_revision": false,
+      "publish_date": "1404/04/30 23:57:07",
+      "title": "اطلاعات و صورت های مالی میاندوره ای دوره 3 ماهه منتهی به 1404/03/31 (حسابرسی نشده)"
+    },
+    {
+      "period": "1404_06M",
+      "is_audited": true,
+      "revenue": 2121239989.0,
+      "cost_of_revenue": -2109073341.0,
+      "gross_profit": 12166648.0,
+      "operating_profit": -106087677.0,
+      "financial_expense": null,
+      "net_profit": -132703032.0,
+      "current_assets": 719044700.0,
+      "inventory": 325671215.0,
+      "receivables": 185297930.0,
+      "cash": 166414542.0,
+      "non_current_assets": 3163292652.0,
+      "total_assets": 3882337352.0,
+      "current_liabilities": 2432479077.0,
+      "non_current_liabilities": 226204704.0,
+      "total_liabilities": 2658683781.0,
+      "share_capital": 2563746068.0,
+      "retained_earnings": -1338098171.0,
+      "total_equity": 1223653571.0,
+      "operating_cash_flow": 79993552.0,
+      "capex": -18645675.0,
+      "is_revision": false,
+      "publish_date": "1405/01/15 10:54:07",
+      "title": "اطلاعات و صورت های مالی میاندوره ای تلفیقی دوره 6 ماهه منتهی به 1404/06/31 (حسابرسی شده)"
+    },
+    {
+      "period": "1404_09M",
+      "is_audited": false,
+      "revenue": 3709516223.0,
+      "cost_of_revenue": -3599178855.0,
+      "gross_profit": 110337368.0,
+      "operating_profit": -43113805.0,
+      "financial_expense": null,
+      "net_profit": -55316857.0,
+      "current_assets": 693794127.0,
+      "inventory": 282662530.0,
+      "receivables": 173887989.0,
+      "cash": 173993679.0,
+      "non_current_assets": 3186118888.0,
+      "total_assets": 3879913015.0,
+      "current_liabilities": 2351270084.0,
+      "non_current_liabilities": 227603185.0,
+      "total_liabilities": 2578873269.0,
+      "share_capital": 2563746068.0,
+      "retained_earnings": -1260711996.0,
+      "total_equity": 1301039746.0,
+      "operating_cash_flow": 77137972.0,
+      "capex": -14510691.0,
+      "is_revision": true,
+      "publish_date": "1404/11/12 11:53:56",
+      "title": "اطلاعات و صورت های مالی میاندوره ای دوره 9 ماهه منتهی به 1404/09/30 (حسابرسی نشده)(اصلاحیه)"
+    },
+    {
+      "period": "1404_12M",
+      "is_audited": true,
+      "revenue": 5103206810.0,
+      "cost_of_revenue": -4967160666.0,
+      "gross_profit": 136046144.0,
+      "operating_profit": -56030947.0,
+      "financial_expense": null,
+      "net_profit": 3085069.0,
+      "current_assets": 959392601.0,
+      "inventory": 396315363.0,
+      "receivables": 276181634.0,
+      "cash": 205201264.0,
+      "non_current_assets": 3204007243.0,
+      "total_assets": 4163399844.0,
+      "current_liabilities": 2598700321.0,
+      "non_current_liabilities": 205257851.0,
+      "total_liabilities": 2803958172.0,
+      "share_capital": 2563746068.0,
+      "retained_earnings": -1202310070.0,
+      "total_equity": 1359441672.0,
+      "operating_cash_flow": -105655934.0,
+      "capex": -18406486.0,
+      "is_revision": false,
+      "publish_date": "1405/04/31 07:40:42",
+      "title": "صورت های مالی تلفیقی سال مالی منتهی به 1404/12/29 (حسابرسی شده)"
+    },
+    {
+      "period": "1405_03M",
+      "is_audited": false,
+      "revenue": 1139382322.0,
+      "cost_of_revenue": -1243487093.0,
+      "gross_profit": -104104771.0,
+      "operating_profit": -193081673.0,
+      "financial_expense": null,
+      "net_profit": -224803882.0,
+      "current_assets": 1363826994.0,
+      "inventory": 673617735.0,
+      "receivables": 296994318.0,
+      "cash": 294632381.0,
+      "non_current_assets": 3216651207.0,
+      "total_assets": 4580478201.0,
+      "current_liabilities": 3193313164.0,
+      "non_current_liabilities": 252527247.0,
+      "total_liabilities": 3445840411.0,
+      "share_capital": 2563746068.0,
+      "retained_earnings": -1427113952.0,
+      "total_equity": 1134637790.0,
+      "operating_cash_flow": 30912757.0,
+      "capex": 0.0,
+      "is_revision": false,
+      "publish_date": "1405/04/31 18:29:37",
+      "title": "اطلاعات و صورت های مالی میاندوره ای دوره 3 ماهه منتهی به 1405/03/31 (حسابرسی نشده)"
+    },
+    {
+      "period": "1405_06M",
+      "is_audited": false,
+      "revenue": 3285916172.0,
+      "cost_of_revenue": -3137385675.0,
+      "gross_profit": 148530497.0,
+      "operating_profit": 9082212.0,
+      "financial_expense": null,
+      "net_profit": -79281475.0,
+      "current_assets": 1716279038.0,
+      "inventory": 563723924.0,
+      "receivables": 610436778.0,
+      "cash": 252750883.0,
+      "non_current_assets": 3268863938.0,
+      "total_assets": 4985142976.0,
+      "current_liabilities": 3454219573.0,
+      "non_current_liabilities": 250763206.0,
+      "total_liabilities": 3704982779.0,
+      "share_capital": 2563746068.0,
+      "retained_earnings": -1281591545.0,
+      "total_equity": 1280160197.0,
+      "operating_cash_flow": 56119936.0,
+      "capex": -29384610.0,
+      "is_revision": false,
+      "publish_date": "1405/07/30 15:43:47",
+      "title": "اطلاعات و صورت های مالی میاندوره ای دوره 6 ماهه منتهی به 1405/06/31 (حسابرسی نشده)"
+    }
+  ],
+  "important_disclosures": [
+    {
+      "group": "گروه_ب",
+      "publish_date": "1405/08/26 18:36:44",
+      "title": "افشای اطلاعات بااهمیت - (سایر اطلاعات بااهمیت - اعلام قیمت فروش محصولات سفیر شرکت ایران خودرو- گروه ب) منتهی به سال مالی 1405/12/29(اصلاحیه)",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=xLd4GvSmX3npcGwUd4tJEA%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1405/08/26 08:02:11",
+      "title": "افشای اطلاعات بااهمیت - (سایر اطلاعات بااهمیت - اعلام قیمت فروش محصولات سفیر شرکت ایران خودرو- گروه ب) منتهی به سال مالی 1405/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=5FN7YUa6pGkfJ1tZPi91Qw%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1405/07/01 08:36:29",
+      "title": "افشای اطلاعات بااهمیت - (سایر اطلاعات بااهمیت - اعلام قیمت فروش محصولات جدید محصولات خانواده هایما- گروه ب) منتهی به سال مالی 1406/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=XuWA0B4QuhkxoMpv0oy1Vg%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1405/05/31 08:14:02",
+      "title": "افشای اطلاعات بااهمیت - (سایر اطلاعات بااهمیت - ابطال مصوبه 473 شورای رقابت- گروه ب) منتهی به سال مالی 1406/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=do3fKgz8xfbakQQQaQQQXp7QenPw%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_الف",
+      "publish_date": "1405/03/30 16:25:32",
+      "title": "افشای اطلاعات بااهمیت - (تغییر در نرخ فروش محصولات یا ارائه خدمات – گروه الف) منتهی به سال مالی 1405/12/29(اصلاحیه)",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=OOObOOOj1a3nJgbTPtaQQQaQQQCib2hQWg%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_الف",
+      "publish_date": "1405/03/28 13:49:39",
+      "title": "افشای اطلاعات بااهمیت - (تغییر در نرخ فروش محصولات یا ارائه خدمات – گروه الف) منتهی به سال مالی 1405/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=RxoHsOUzF1yDbKUl2nCoJQ%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_الف",
+      "publish_date": "1405/03/27 16:35:45",
+      "title": "افشای اطلاعات بااهمیت - (تغییر در نرخ فروش محصولات یا ارائه خدمات – گروه الف) منتهی به سال مالی 1405/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=eCLNF4oHccbVpPfg5aWsCg%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1405/02/06 14:33:20",
+      "title": "افشای اطلاعات بااهمیت - (سایر اطلاعات بااهمیت - خرید سهام شرکت تیوان توسط شرکت تحقیق طراحی و تولید- گروه ب) منتهی به سال مالی 1404/12/29(اصلاحیه)",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=gPJPlXApRLQQQaQQQOLwGlMXB5vA%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1404/12/24 10:23:17",
+      "title": "افشای اطلاعات بااهمیت - (سایر اطلاعات بااهمیت - خریدسهام شرکت تیوان توسط شرکت تحقیق طراحی وتولید- گروه ب) منتهی به سال مالی 1404/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=Gr97CkbgL3epFVVDGcKXlg%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1404/12/06 08:20:14",
+      "title": "افشای اطلاعات بااهمیت - (سایر اطلاعات بااهمیت - واگذاری سهام ایرانخودرو متعلق به شرکتهای تحت کنترل- گروه ب) منتهی به سال مالی 1405/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=qeu3NAx77Hiy6v9FRRLprA%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_الف",
+      "publish_date": "1404/11/21 08:09:59",
+      "title": "افشای اطلاعات بااهمیت - (تغییر در نرخ فروش محصولات یا ارائه خدمات – گروه الف) منتهی به سال مالی 1404/12/29(اصلاحیه)",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=M1jO1zOOObOOOonHT6Ans8t1idjA%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_الف",
+      "publish_date": "1404/11/07 08:04:24",
+      "title": "افشای اطلاعات بااهمیت - (تغییر در نرخ فروش محصولات یا ارائه خدمات – گروه الف) منتهی به سال مالی 1404/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=rmSQQQaQQQQTW6KjBf4CEd0WqJpw%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1404/10/18 13:46:33",
+      "title": "افشای اطلاعات بااهمیت - (سایر اطلاعات بااهمیت - امضاء قراردادسرمایه گذاری مشترک- گروه ب) منتهی به سال مالی 1404/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=l36gUJpZ7MhtI4V0l9A39g%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1404/10/17 20:46:13",
+      "title": "افشای اطلاعات بااهمیت - (سایر اطلاعات بااهمیت - اقدامات انجام شده درخصوص واگذاری سهام تودلی- گروه ب) منتهی به سال مالی 1405/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=eby8yqlgbk3PTvJHQ7DaXg%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1404/10/02 20:56:44",
+      "title": "افشای اطلاعات بااهمیت - (سایر اطلاعات بااهمیت - اخذ مجوز تملک سهام مازاد بر 10 درصد بانک پارسیان- گروه ب) منتهی به سال مالی 1404/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=2PF9mtDOWaL4GbaAOOObOOOcnyiw%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1404/09/02 09:39:23",
+      "title": "افشای اطلاعات بااهمیت - (عدم حصول نتیجه از برگزاری مزایده - گروه ب) منتهی به سال مالی 1404/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=P3nOKeOOObOOO3cuGRzLPKjmeqiQ%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1404/08/20 08:48:22",
+      "title": "افشای اطلاعات بااهمیت - (برگزاری مزایده - گروه ب) منتهی به سال مالی 1404/12/29(اصلاحیه)",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=d3mvyfudIN5WqCc7dSPLVA%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1404/08/19 17:22:58",
+      "title": "افشای اطلاعات بااهمیت - (برگزاری مزایده - گروه ب) منتهی به سال مالی 1404/12/29(اصلاحیه)",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=OOObOOOqGfMWRKYVT80mg1qr0fiQ%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1404/08/19 11:30:37",
+      "title": "افشای اطلاعات بااهمیت - (برگزاری مزایده - گروه ب) منتهی به سال مالی 1404/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=fzBD5Mchj2ZVMD1DduZnww%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1404/08/06 16:49:29",
+      "title": "افشای اطلاعات بااهمیت - (سایر اطلاعات بااهمیت - اعلام قیمت جدید محصولات خانواده هایما- گروه ب) منتهی به سال مالی 1404/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=HiKeB9ljwp0TjQQQaQQQQn1JhV0Q%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1404/07/28 09:26:57",
+      "title": "افشای اطلاعات بااهمیت - (سایر اطلاعات بااهمیت - اعلام قیمت جدید محصولات تولیدی شرکت ایران خودرو- گروه ب) منتهی به سال مالی 1404/12/29(اصلاحیه)",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=UrTL5AXjI35jwyvBgViQQQaQQQUQ%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1404/07/27 10:42:58",
+      "title": "افشای اطلاعات بااهمیت - (سایر اطلاعات بااهمیت - اعلام قیمت جدید محصولات تولیدی شرکت ایران خودرو- گروه ب) منتهی به سال مالی 1404/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=dfHxNFt7obUplk6aAnOOObOOOoog%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1404/07/21 18:40:30",
+      "title": "افشای اطلاعات بااهمیت - (سایر اطلاعات بااهمیت - زمان افشای قیمت محصولات شرکت ایران خودرو- گروه ب) منتهی به سال مالی 1404/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=olkQQQaQQQCFMHcB2MKsOOObOOOfWHAQ8A%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1404/06/20 08:46:12",
+      "title": "افشای اطلاعات بااهمیت - (نتیجه دادگاه بدوی دعوی علیه شرکت - گروه ب) منتهی به سال مالی 1404/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=86qLX1trShSYKNIv2aEQRg%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1404/06/17 08:04:42",
+      "title": "افشای اطلاعات بااهمیت - (سایر اطلاعات بااهمیت - پذیرش خودروهای سواری رانا،سورن و ری را دربورس کالا- گروه ب) منتهی به سال مالی 1404/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=QQQaQQQaPsmomnPwo6lMsUeDkbsw%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1404/05/28 11:37:18",
+      "title": "افشای اطلاعات بااهمیت - (تغییر در مفاد هر نوع اطلاعیه بااهمیتی که قبلاً منتشر شده است - گروه ب) منتهی به سال مالی 1404/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=igwTunh3c6Pl6CFQQQaQQQcmzhzg%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_الف",
+      "publish_date": "1404/05/23 13:09:25",
+      "title": "افشای اطلاعات بااهمیت - (نتیجه نهایی دعوی علیه شرکت - گروه الف) منتهی به سال مالی 1404/12/29(اصلاحیه)",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=DNTPTn0VR1Rkan9OOObOOOlanhtw%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_الف",
+      "publish_date": "1404/05/23 12:55:27",
+      "title": "افشای اطلاعات بااهمیت - (نتیجه نهایی دعوی علیه شرکت - گروه الف) منتهی به سال مالی 1404/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=UtnBcTCMpBvE92JWcOFOOObOOOaA%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1404/05/08 10:40:43",
+      "title": "افشای اطلاعات بااهمیت - (طرح دعوی له شرکت - گروه ب) منتهی به سال مالی 1404/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=5G2hpjE3PdPRGgCex1cbJA%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1404/04/24 09:25:21",
+      "title": "افشای اطلاعات بااهمیت - (سایر اطلاعات بااهمیت - واگذاری سهام تودلی براساس بندب قانون برنامه 5 ساله- گروه ب) منتهی به سال مالی 1404/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=BVp8tR8ALJ1Eqmqh4LsEMQ%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1404/04/18 10:26:17",
+      "title": "افشای اطلاعات بااهمیت - (سایر اطلاعات بااهمیت - اعلام قیمت جدید محصولات خانواده هایما- گروه ب) منتهی به سال مالی 1404/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=E2st1lctG427AedCQPP7lA%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_الف",
+      "publish_date": "1404/03/20 21:21:37",
+      "title": "افشای اطلاعات بااهمیت - (تغییر در نرخ فروش محصولات یا ارائه خدمات – گروه الف) منتهی به سال مالی 1404/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=YjupDozWTLrMeP9syhwxjg%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1404/03/18 08:57:56",
+      "title": "افشای اطلاعات بااهمیت - (سایر اطلاعات بااهمیت - آخرین وضعیت پیگیری مجوز افزایش نرخ محصولات- گروه ب) منتهی به سال مالی 1404/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=8ZJJTUR3AL7Xixib0FSxvQ%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1404/03/07 17:36:53",
+      "title": "افشای اطلاعات بااهمیت - (برگزاری مزایده - گروه ب) منتهی به سال مالی 1404/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=21q5eA9n1DQHSW08VhsVzw%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1404/03/05 08:51:45",
+      "title": "افشای اطلاعات بااهمیت - (سایر اطلاعات بااهمیت - توضیحات درخصوص فروش سهام تودلی- گروه ب) منتهی به سال مالی 1404/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=2KyIjGKqrhqD2QxTDuXT2A%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1404/03/04 08:08:04",
+      "title": "افشای اطلاعات بااهمیت - (سایر اطلاعات بااهمیت - تهیه گزارش نهایی ساماندهی صنعت خودرو سازی- گروه ب) منتهی به سال مالی 1404/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=2pqIvg5OzkR5WOO4Jm35hQ%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1404/01/19 08:53:21",
+      "title": "افشای اطلاعات بااهمیت - (سایر اطلاعات بااهمیت - رای قطعی دیوان عدالت اداری مبنی برابطال رای188/03- گروه ب) منتهی به سال مالی 1404/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=IKTU5WbLHYex66zU8w8EtA%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1403/10/19 12:58:47",
+      "title": "افشای اطلاعات بااهمیت - (سایر اطلاعات بااهمیت - افزایش قیمت 6 محصول تولیدی ایران خودرو- گروه ب) منتهی به سال مالی 1403/12/30(اصلاحیه)",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=jfuTkN8W3033e9dxlco5og%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1403/10/18 18:54:42",
+      "title": "افشای اطلاعات بااهمیت - (سایر اطلاعات بااهمیت - افزایش قیمت 6 محصول تولیدی شرکت ایران خودرو- گروه ب) منتهی به سال مالی 1403/12/30",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=L6Hn30ByxWuK4VMOOObOOOqSWe1A%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1403/10/16 19:58:21",
+      "title": "افشای اطلاعات بااهمیت - (سایر اطلاعات بااهمیت - اعلام قیمت محصول هایما اس 7 پرو- گروه ب) منتهی به سال مالی 1403/12/30",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=lzrFZliFc1OOObOOOMCZMIf5kLyw%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1403/10/09 09:32:22",
+      "title": "افشای اطلاعات بااهمیت - (سایر اطلاعات بااهمیت - فراخوان عمومی شناسایی متقاضیان خریدسهام- گروه ب) منتهی به سال مالی 1403/12/30",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=aSL8hkMD0z1zPNpuQQQaQQQgN2og%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1403/09/28 15:45:49",
+      "title": "افشای اطلاعات بااهمیت - (سایر اطلاعات بااهمیت - پذیرش خودرو وانت آریسان در بورس کالا- گروه ب) منتهی به سال مالی 1403/12/30",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=QQQaQQQRXTrNwiHRRAFoCfEhspuQ%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_الف",
+      "publish_date": "1403/08/27 23:29:52",
+      "title": "افشای اطلاعات بااهمیت - (دریافت مجوز تغییر بیش از 10 درصد در نرخ فروش محصولات یا ارائه خدمات - گروه الف) منتهی به سال مالی 1403/12/30",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=BNd6lz9c5cROOObOOOKiMUN9JljA%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1403/07/30 11:33:53",
+      "title": "افشای اطلاعات بااهمیت - (عدم حصول نتیجه از برگزاری مزایده - گروه ب) منتهی به سال مالی 1403/12/30",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=d07kOaGmWsNpILFn4wrG9w%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1403/07/09 16:23:29",
+      "title": "افشای اطلاعات بااهمیت - (برگزاری مزایده - گروه ب) منتهی به سال مالی 1403/12/30",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=9Xr1JEKOOObOOOodxQKAJ0sdLhKQ%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1403/06/25 10:54:07",
+      "title": "افشای اطلاعات بااهمیت - (عدم حصول نتیجه از برگزاری مزایده - گروه ب) منتهی به سال مالی 1403/12/30",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=QOBemDtjcZJbw0eoFH9xPw%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1403/06/10 14:48:54",
+      "title": "افشای اطلاعات بااهمیت - (برگزاری مزایده - گروه ب) منتهی به سال مالی 1403/12/30",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=GwXh5I65oGWgNr08QQQaQQQHCokw%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1403/05/17 13:38:47",
+      "title": "افشای اطلاعات بااهمیت - (سایر اطلاعات بااهمیت - رای هیات داوری قانون بازار اوراق بهادار- گروه ب) منتهی به سال مالی 1403/12/30",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=FPTQ%2bWCoRGbPRgHffRuw5w%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1403/05/16 18:20:37",
+      "title": "افشای اطلاعات بااهمیت - (سایر اطلاعات بااهمیت - اعلام قیمت محصول جدید (ری را)- گروه ب) منتهی به سال مالی 1403/12/30",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=HRvvjQyA60Bgo7zdUtQQQaQQQ0WA%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1403/05/15 18:07:04",
+      "title": "افشای اطلاعات بااهمیت - (عدم حصول نتیجه از برگزاری مزایده - گروه ب) منتهی به سال مالی 1403/12/30",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=i1%2bDam34sJUhzc%2bIcLjCWA%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1403/05/06 09:49:50",
+      "title": "افشای اطلاعات بااهمیت - (سایر اطلاعات بااهمیت - اعلام قیمت 6 محصول تولیدی شرکت ایران خودرو- گروه ب) منتهی به سال مالی 1403/12/30",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=G3bO3%2bx3%2bbH1jhuj3FB%2b9w%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1403/05/03 17:44:58",
+      "title": "افشای اطلاعات بااهمیت - (سایر اطلاعات بااهمیت - اعلام قیمت جدید 6 محصول تولیدی شرکت ایران خودرو- گروه ب) منتهی به سال مالی 1403/12/30",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=u99wX2HyEbG4ZJwhlNQFjQ%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1403/04/30 20:19:10",
+      "title": "افشای اطلاعات بااهمیت - (برگزاری مزایده - گروه ب) منتهی به سال مالی 1403/12/30",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=sG3Lub3Jm%2bfBEVY080UIuw%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1403/04/27 08:56:34",
+      "title": "افشای اطلاعات بااهمیت - (عدم حصول نتیجه از برگزاری مزایده - گروه ب) منتهی به سال مالی 1403/12/30",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=NkBFM0brylWMaJHewrymZQ%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1403/04/18 14:26:15",
+      "title": "افشای اطلاعات بااهمیت - (برگزاری مزایده - گروه ب) منتهی به سال مالی 1403/12/30",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=WL66DmKXuTlC9yN3Qd6OQQ%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1403/02/30 08:36:08",
+      "title": "افشای اطلاعات بااهمیت - (تغییر در مفاد هر نوع اطلاعیه بااهمیتی که قبلاً منتشر شده است - گروه ب) منتهی به سال مالی 1403/12/30",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=bwJ6qEkeiN9TFDdcRXIe9g%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_الف",
+      "publish_date": "1403/02/30 08:24:46",
+      "title": "افشای اطلاعات بااهمیت - (تغییر در مفاد هر نوع اطلاعیه بااهمیتی که قبلاً منتشر شده است - گروه الف) منتهی به سال مالی 1403/12/30",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=IgPOa1hGuvokg46QtGrRug%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_الف",
+      "publish_date": "1403/02/29 13:42:26",
+      "title": "افشای اطلاعات بااهمیت - (دریافت مجوز تغییر بیش از 10 درصد در نرخ فروش محصولات یا ارائه خدمات - گروه الف) منتهی به سال مالی 1403/12/30",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=iUkTZwbW2SQrSHQQQaQQQhgLCA%2bQ%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1403/02/25 09:37:17",
+      "title": "افشای اطلاعات بااهمیت - (سایر اطلاعات بااهمیت - آگهی عرضه عمومی سهام شرکتها- گروه ب) منتهی به سال مالی 1403/12/30",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=F6QLGvkxvfDq3o50ck2sIg%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_الف",
+      "publish_date": "1403/01/29 14:38:24",
+      "title": "افشای اطلاعات بااهمیت - (دریافت مجوز تغییر بیش از 10 درصد در نرخ فروش محصولات یا ارائه خدمات - گروه الف) منتهی به سال مالی 1402/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=HMPPTcqCcbpYJHQQQaQQQahQAdow%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1402/12/28 10:52:20",
+      "title": "افشای اطلاعات بااهمیت - (تغییر در مفاد هر نوع اطلاعیه بااهمیتی که قبلاً منتشر شده است - گروه ب) منتهی به سال مالی 1402/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=dT2ys6r4Y6rDYniLAVfZrw%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_الف",
+      "publish_date": "1402/12/27 16:13:42",
+      "title": "افشای اطلاعات بااهمیت - (نتایج برگزاری مزایده - گروه الف) منتهی به سال مالی 1402/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=AAc772iFLGgqKN2WZDp8OA%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1402/12/01 12:13:12",
+      "title": "افشای اطلاعات بااهمیت - (برگزاری مزایده - گروه ب) منتهی به سال مالی 1402/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=lUWyVwBZF4f%2bQQQaQQQsQmUir%2b1g%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1402/10/23 15:16:56",
+      "title": "افشای اطلاعات بااهمیت - (سایر اطلاعات بااهمیت - فراخوان عمومی جهت واگذاری سهام پارسیان- گروه ب) منتهی به سال مالی 1402/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=OWkmI5GvBBOfSwB4W%2bToZQ%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1402/07/26 12:29:40",
+      "title": "افشای اطلاعات بااهمیت - (سایر اطلاعات بااهمیت - اعلام قیمت خودرو های جدید ایران خودرو- گروه ب) منتهی به سال مالی 1402/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=M%2bf7LyJM1MJTB92TccTxMQ%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1402/03/22 08:42:38",
+      "title": "افشای اطلاعات بااهمیت - (سایر اطلاعات بااهمیت - قیمت خودروها جدیدناشی ازتغییرات اجباری واختیاری- گروه ب) منتهی به سال مالی 1402/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=De45Qd5VnU5ChTQEPLsFJA%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_الف",
+      "publish_date": "1402/03/17 15:04:23",
+      "title": "افشای اطلاعات بااهمیت - (تعدیلات سنواتی - گروه الف) منتهی به سال مالی 1402/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=YNSGxNXnD1uHI9JUIHpebA%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_الف",
+      "publish_date": "1402/01/21 12:36:28",
+      "title": "افشای اطلاعات بااهمیت - (دریافت مجوز تغییر بیش از 10 درصد در نرخ فروش محصولات یا ارائه خدمات - گروه الف) منتهی به سال مالی 1402/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=DQQQaQQQ79XTW7HgtwdgNOKghxjg%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1401/08/16 09:52:10",
+      "title": "افشای اطلاعات بااهمیت - (سایر اطلاعات بااهمیت - پذیرش خودرو های پژو 207 و تارا در بورس کالا- گروه ب) منتهی به سال مالی 1401/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=vUU6yOeOjfIhZQrTQQQaQQQi%2bsDA%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1401/06/15 08:34:26",
+      "title": "افشای اطلاعات بااهمیت - (سایر اطلاعات بااهمیت - عرضه خودرو هایما در بورس کالا- گروه ب) منتهی به سال مالی 1401/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=AZH4XX1tPa3tpdWFfpD75A%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1401/06/01 08:49:01",
+      "title": "افشای اطلاعات بااهمیت - (سایر اطلاعات بااهمیت - پذیرش و عرضه خودرو سواری هایما در بورس کالا- گروه ب) منتهی به سال مالی 1401/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=HfKIUKmnG6tWq9ogPDraNQ%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1401/05/29 17:34:12",
+      "title": "افشای اطلاعات بااهمیت - (برگزاری مزایده - گروه ب) منتهی به سال مالی 1401/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=gOqgv0AcdXmTRBQ8eLHbEQ%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1401/05/19 08:46:55",
+      "title": "افشای اطلاعات بااهمیت - (سایر اطلاعات بااهمیت - تسویه بخشی از مطالبات از شرکت ایران خودرو دیزل- گروه ب) منتهی به سال مالی 1401/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=pxyQd3XhOStLLPGHYHkI4A%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1401/05/05 10:26:02",
+      "title": "افشای اطلاعات بااهمیت - (برگزاری مزایده - گروه ب) منتهی به سال مالی 1401/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=KJfUO98NRWFxvDZ69jUomw%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1401/05/02 12:30:29",
+      "title": "افشای اطلاعات بااهمیت - (برگزاری مزایده - گروه ب) منتهی به سال مالی 1401/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=gwmtwbKyKChHrJhTJyxCcg%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_الف",
+      "publish_date": "1401/03/26 14:08:42",
+      "title": "افشای اطلاعات بااهمیت - (تحصیل سهام - گروه الف) منتهی به سال مالی 1401/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=kssCncUkQnsk3LBXETyNQQQaQQQQ%3d%3d&rt=0&let=11&ct=0&ft=-1"
+    },
+    {
+      "group": "گروه_ب",
+      "publish_date": "1401/02/05 09:44:07",
+      "title": "افشای اطلاعات بااهمیت - (توثیق یا فک رهن دارایی ها - گروه ب) منتهی به سال مالی 1401/12/29",
+      "codal_url": "https://codal.ir/Reports/Decision.aspx?LetterSerial=%2BiIZGLP2axrpmRLXCgPGxg%3D%3D&rt=0&let=11&ct=0&ft=-1"
+    }
+  ],
+  "interpretive_reports": [
+    {
+      "period": "1405_06M",
+      "publish_date": "1405/07/30 15:43:47",
+      "title": "گزارش تفسیری مدیریت - اطلاعات و صورت های مالی میاندوره ای دوره 6 ماهه منتهی به 1405/06/31 (حسابرسی نشده)",
+      "pdf_url": "./Codal_DB/خودرو_و_ساخت_قطعات/خودرو/04_Interpretive_Reports/1405_06M_گزارش_تفسیری_مدیریت.pdf"
+    },
+    {
+      "period": "1404_12M",
+      "publish_date": "1405/04/31 07:40:42",
+      "title": "گزارش تفسیری مدیریت - صورت های مالی تلفیقی سال مالی منتهی به 1404/12/29 (حسابرسی شده)",
+      "pdf_url": "./Codal_DB/خودرو_و_ساخت_قطعات/خودرو/04_Interpretive_Reports/1404_12M_گزارش_تفسیری_مدیریت.pdf"
+    },
+    {
+      "period": "1403_12M",
+      "publish_date": "1404/04/31 07:46:22",
+      "title": "گزارش تفسیری مدیریت - صورت های مالی تلفیقی سال مالی منتهی به 1403/12/30 (حسابرسی شده)",
+      "pdf_url": "./Codal_DB/خودرو_و_ساخت_قطعات/خودرو/04_Interpretive_Reports/1403_12M_گزارش_تفسیری_مدیریت.pdf"
+    },
+    {
+      "period": "1402_12M",
+      "publish_date": "1403/04/31 01:02:52",
+      "title": "گزارش تفسیری مدیریت - صورت های مالی تلفیقی سال مالی منتهی به 1402/12/29 (حسابرسی شده)",
+      "pdf_url": "./Codal_DB/خودرو_و_ساخت_قطعات/خودرو/04_Interpretive_Reports/1402_12M_گزارش_تفسیری_مدیریت.pdf"
+    },
+    {
+      "period": "1401_12M",
+      "publish_date": "1402/05/01 12:47:23",
+      "title": "گزارش تفسیری مدیریت - صورت های مالی تلفیقی سال مالی منتهی به 1401/12/29 (حسابرسی شده)",
+      "pdf_url": "./Codal_DB/خودرو_و_ساخت_قطعات/خودرو/04_Interpretive_Reports/1401_12M_گزارش_تفسیری_مدیریت.pdf"
+    },
+    {
+      "period": "1400_12M",
+      "publish_date": "1401/04/27 23:50:40",
+      "title": "گزارش تفسیری مدیریت - صورت های مالی تلفیقی سال مالی منتهی به 1400/12/29 (حسابرسی شده)",
+      "pdf_url": "./Codal_DB/خودرو_و_ساخت_قطعات/خودرو/04_Interpretive_Reports/1400_12M_گزارش_تفسیری_مدیریت.pdf"
+    }
+  ]
+}
