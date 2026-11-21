@@ -224,7 +224,7 @@ export default function App() {
   }, [selectedSymbol]);
 
   useEffect(() => {
-    fetch('/Dashboard_Data/index.json')
+    fetch('./Dashboard_Data/index.json')
       .then((res) => (res.ok ? res.json() : null))
       .then((indexList) => {
         if (!Array.isArray(indexList) || indexList.length === 0) return;
@@ -250,7 +250,7 @@ export default function App() {
     const tickerName = activeConfig?.ticker || selectedSymbol;
     if (!tickerName) return;
 
-    fetch(`/Dashboard_Data/${encodeURIComponent(tickerName)}_Archive.json`)
+    fetch(`./Dashboard_Data/${encodeURIComponent(tickerName)}_Archive.json`)
       .then((res) => (res.ok ? res.json() : null))
       .then((rawArchive) => {
         if (!rawArchive) return;
