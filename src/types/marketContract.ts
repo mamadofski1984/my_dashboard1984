@@ -63,7 +63,16 @@ export interface SymbolSummaryItem {
   reviewStatus: 'auto_generated' | 'human_verified' | 'source_only';
 }
 export interface Source { id: string; archiveDate: string | null; url: string | null }
+export interface PeriodCoverageNote {
+  fiscalYear: number;
+  periodMonths: 12;
+  status: 'published_unextracted' | 'no_eligible_filing_found';
+  reason: string;
+}
+
 export interface SymbolDetailData {
+  missingMonthlyPeriods?: string[];
+  periodCoverageNotes?: PeriodCoverageNote[];
   issuerId: string;
   sectorTemplate: 'manufacturing' | 'banking' | 'holding' | 'exchange_service' | 'other';
   sources: Source[];

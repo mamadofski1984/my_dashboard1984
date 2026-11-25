@@ -1,7 +1,8 @@
+import { PriorityDataGaps, applyCorrections, type Corrections } from './components/PriorityDataGaps';
 import { marketRepository } from './repositories/MarketDataRepository';
 import type { ManifestData, MasterIndexData, SymbolDetailData } from './types/marketContract';
 import { runIdempotentLegacyMigration, readUserStorage } from './utils/legacyStorageMigration';
-import { formatRatioBadge, instrumentProfile, mapContractDetail, normalizeMarketSearch, parseDecimalSafe } from './utils/contractViewMapper';
+import { fiscalScope, type AnnualScope, formatRatioBadge, instrumentProfile, mapContractDetail, normalizeMarketSearch, parseDecimalSafe } from './utils/contractViewMapper';
 import { createMarketBackup, prepareMarketRestore, restoreMarketBackup } from './utils/marketBackup';
 import { calculateRatios } from './utils/financialRatios';
 import {CompanyHeader,useTerminalTheme,ChartGradients,compactNumber} from './components/Terminal';
@@ -25,14 +26,43 @@ const ForecastTab = lazy(() => import('./components/ForecastTab').then(module =>
 const MarketFixtures = lazy(() => import('./components/MarketFixtures').then(module => ({ default: module.MarketFixtures })));
 
 function selectedInstrumentFromUrl() {
-  return /^#\/symbols\/(INS_[A-Z0-9_-]+)$/.exec(location.hash)?.[1]
-    ?? new URLSearchParams(location.search).get('instrument');
+  const { hash, search } = window.location;
+  if (/^#\/symbols(?:\/|$)/.test(hash)) {
+    return /^#\/symbols\/(INS_[A-Z0-9_-]+)$/.exec(hash)?.[1] ?? null;
+  }
+  return new URLSearchParams(search).get('instrument');
+}
+
+function instrumentUrl(id: string) {
+  const url = new URL(window.location.href);
+  url.searchParams.delete('instrument');
+  url.hash = '/symbols/' + id;
+  return url;
+}
+
+function auditLabel(isAudited: boolean | null) {
+  return isAudited === true ? 'حسابرسی‌شده' : isAudited === false ? 'حسابرسی‌نشده' : 'وضعیت حسابرسی نامشخص';
 }
 
 const toPersianDigits = (str: string) => {
   const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
   return str.replace(/\d/g, (d) => persianDigits[Number(d)]);
 };
+
+const chartNumber = new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 2 });
+const formatChartNumber = (value: number) => chartNumber.format(value);
+
+function FinancialPeriodTick({ x = 0, y = 0, payload, fill }: {
+  x?: number; y?: number; payload?: { value: string }; fill: string;
+}) {
+  const [year, interim] = (payload?.value ?? '').split(' (');
+  const [duration, audit] = (interim ?? '').replace(/\)$/, '').split('، ');
+  return <text x={x} y={y + 12} textAnchor="middle" fill={fill} fontSize={10}>
+    <tspan x={x}>{year}</tspan>
+    {duration && <tspan x={x} dy="13">{duration}</tspan>}
+    {audit && <tspan x={x} dy="13" fontSize={8}>{audit}</tspan>}
+  </text>;
+}
 
 const CustomTooltip = ({ active, payload, label, unit = '', darkMode = false }: any) => {
   if (active && payload && payload.length) {
@@ -46,7 +76,7 @@ const CustomTooltip = ({ active, payload, label, unit = '', darkMode = false }: 
               <span className={darkMode ? 'text-slate-300' : 'text-slate-600'}>{entry.name}:</span>
             </div>
             <span className="font-bold" dir="ltr">
-              {typeof entry.value === 'number' ? entry.value.toLocaleString('fa-IR') : entry.value ?? '—'} {entry.value !== null && unit}
+              {typeof entry.value === 'number' ? formatChartNumber(entry.value) : entry.value ?? '—'} {typeof entry.value === 'number' && unit}
             </span>
           </div>
         ))}
@@ -80,7 +110,20 @@ export default function App() {
     }).catch(() => { if (!signal.aborted) setError('بارگذاری فهرست داده‌ها ناموفق بود.'); });
     return () => controller.abort();
   }, [attempt]);
-  const instrument = release?.index.instruments.find(item => item.instrumentId === selected) ?? release?.index.instruments[0];
+  const instruments = release?.index.instruments;
+  const instrument = instruments?.find(item => item.instrumentId === selected)
+    ?? instruments?.find(item => item.isPrimaryInstrument)
+    ?? instruments?.[0];
+
+  useEffect(() => {
+    if (!instrument?.instrumentId) return;
+    // A hash change can arrive before React commits the matching selection.
+    if (selectedInstrumentFromUrl() !== selected) return;
+    const id = instrument.instrumentId;
+    const url = instrumentUrl(id);
+    if (url.href !== window.location.href) window.history.replaceState(window.history.state, '', url);
+    if (id !== selected) setSelected(id);
+  }, [instrument, selected]);
   const requestKey = release && instrument ? release.manifest.releaseId + ':' + instrument.instrumentId : null;
   const requestIdentity = useRef(requestKey);
   useEffect(() => { requestIdentity.current = requestKey; }, [requestKey]);
@@ -105,16 +148,14 @@ export default function App() {
     status={active?.failed ? 'بارگذاری پرونده ناشر ناموفق بود' : !active ? 'در حال بارگذاری پرونده ناشر…' : active.detail ? 'پرونده ناشر آماده است' : 'پرونده مالی موجود نیست'}
     mainPage={page} setMainPage={setPage} onRestore={() => setRestoreVersion(value => value + 1)} refresh={() => setAttempt(value => value + 1)}
     selectInstrument={id => {
-      const url = new URL(location.href);
-      url.searchParams.delete('instrument');
-      url.hash = '/symbols/' + id;
+      const url = instrumentUrl(id);
       if (url.href !== location.href) history.pushState(history.state, '', url);
       requestIdentity.current = release.manifest.releaseId + ':' + id;
       setSelected(id);
     }} />;
 }
 
-function Dashboard({ release, selectedSymbol, detail, status, mainPage, setMainPage, refresh, selectInstrument, onRestore }: {
+function Dashboard({ release, selectedSymbol, detail: publishedDetail, status, mainPage, setMainPage, refresh, selectInstrument, onRestore }: {
   release: { manifest: ManifestData; index: MasterIndexData };
   selectedSymbol: string;
   detail: SymbolDetailData | null;
@@ -130,7 +171,29 @@ function Dashboard({ release, selectedSymbol, detail, status, mainPage, setMainP
   const instrument = instruments.find(item => item.instrumentId === selectedSymbol)!;
   const profiles = instruments.map(item => instrumentProfile(item, sectors.find(sector => sector.id === item.sectorId)?.nameFa ?? '—'));
   const activeConfig = profiles.find(item => item.key === selectedSymbol)!;
+  const correctionsKey = instrument.issuerId + '_priority_corrections_v1';
+  const [corrections, setCorrections] = useState<Corrections>(() => readUserStorage(correctionsKey) ?? {});
+  const detail = useMemo(() => applyCorrections(publishedDetail, corrections), [publishedDetail, corrections]);
+  const saveCorrection = (key: string, values?: Record<string, string>) => {
+    const updated = { ...corrections };
+    if (values) updated[key] = values;
+    else delete updated[key];
+    localStorage.setItem(correctionsKey, JSON.stringify(updated));
+    setCorrections(updated);
+  };
   const view = useMemo(() => mapContractDetail(detail), [detail]);
+  const [annualScope, setAnnualScope] = useState<AnnualScope | 'separate'>('separate');
+  const publishedCharts = useMemo(() => view.coveredScopes
+    .map(scope => {
+      const mapped = mapContractDetail(detail, scope);
+      return { scope, data: mapped.fundStore, timeline: mapped.financialTimeline };
+    }), [detail, view.coveredScopes]);
+  const indexOnly = instrument.coverageState === 'index_only';
+  const hasPublishedMonthly = detail?.monthlySales.some(row => row.revenueIrr !== null) ?? false;
+  const isHolding = detail?.sectorTemplate === 'holding';
+  const scopedCharts = annualScope === 'separate' ? publishedCharts : publishedCharts.filter(chart => chart.scope === annualScope);
+  const efficiencyLabel = detail?.sectorTemplate === 'banking'
+    ? 'نسبت هزینه عملیاتی بانک به درآمد عملیاتی' : 'نسبت بهای تمام‌شده به درآمد';
   const snapshot = instrument.snapshot;
   const liveData = useMemo(() => ({
     pc: parseDecimalSafe(snapshot?.closePrice), mv: parseDecimalSafe(snapshot?.marketCapIrr),
@@ -162,7 +225,8 @@ function Dashboard({ release, selectedSymbol, detail, status, mainPage, setMainP
   const [disclosureGroupFilter, setDisclosureGroupFilter] = useState<'all' | 'الف' | 'ب'>('all');
   const [valInputs, setValInputs] = useState(activeConfig.defaultValInputs);
 
-  const [fundStore, setFundStore] = useState<any>(() => readUserStorage(FUNDAMENTAL_DYNAMIC_KEY) ?? view.fundStore);
+  const [localFundStore, setLocalFundStore] = useState<any>(() => readUserStorage(FUNDAMENTAL_DYNAMIC_KEY));
+  const fundStore = localFundStore ?? view.fundStore;
   const [excelParsePreview, setExcelParsePreview] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const jsonRestoreInputRef = useRef<HTMLInputElement | null>(null);
@@ -276,7 +340,7 @@ function Dashboard({ release, selectedSymbol, detail, status, mainPage, setMainP
           batchUpdates[row.month] !== undefined ? { ...row, year1405: batchUpdates[row.month] } : row
         )
       };
-      setFundStore(updatedStore);
+      setLocalFundStore(updatedStore);
       localStorage.setItem(FUNDAMENTAL_DYNAMIC_KEY, JSON.stringify(updatedStore));
       setCodalStatus({
         type: 'success',
@@ -301,7 +365,7 @@ function Dashboard({ release, selectedSymbol, detail, status, mainPage, setMainP
           row.month === targetMonth ? { ...row, year1405: Number(monthlySales) } : row
         )
       };
-      setFundStore(updatedStore);
+      setLocalFundStore(updatedStore);
       localStorage.setItem(FUNDAMENTAL_DYNAMIC_KEY, JSON.stringify(updatedStore));
       setExcelParsePreview(null);
       return;
@@ -331,13 +395,13 @@ function Dashboard({ release, selectedSymbol, detail, status, mainPage, setMainP
         return r;
       })
     };
-    setFundStore(updatedStore);
+    setLocalFundStore(updatedStore);
     localStorage.setItem(FUNDAMENTAL_DYNAMIC_KEY, JSON.stringify(updatedStore));
     setExcelParsePreview(null);
   };
 
   const handleResetFundamentalStore = () => {
-    setFundStore(view.fundStore);
+    setLocalFundStore(undefined);
     localStorage.removeItem(FUNDAMENTAL_DYNAMIC_KEY);
     setExcelParsePreview(null);
   };
@@ -439,23 +503,21 @@ function Dashboard({ release, selectedSymbol, detail, status, mainPage, setMainP
     return rates[year] || currentRate;
   };
 
-  const dynamicAnnualIncomeData = fundStore.annualIncomeData.map((item: any) => {
+  const annualIncomeForCurrency = (rows: typeof view.financialTimeline) => rows.map(item => {
     const rate = getHistoricalUsdRate(item.year, customUsdRate);
     return {
       ...item,
       usdValue: item.value == null ? null : Number(((item.value * 1000) / rate).toFixed(1)),
       usdNetProfit: item.netProfit == null ? null : Number(((item.netProfit * 1000) / rate).toFixed(1)),
-      compUsdValue: item.compValue == null ? null : Number(((item.compValue * 1000) / rate).toFixed(1)),
-      compUsdNetProfit: item.compNetProfit == null ? null : Number(((item.compNetProfit * 1000) / rate).toFixed(1)),
     };
   });
 
-  const historicalRatiosTable = [
-    { name: 'حاشیه سود خالص', data: fundStore.netMarginData, unit: '٪' },
-    { name: 'حاشیه سود عملیاتی', data: fundStore.opMarginData, unit: '٪' },
-    { name: 'بازده حقوق مالکانه (ROE)', data: fundStore.roeData, unit: '٪' },
-    { name: 'نسبت کارایی (هزینه به درآمد)', data: fundStore.efficiencyData, unit: '٪' },
-    { name: 'نسبت P/B', data: fundStore.pbData, unit: ' مرتبه' },
+  const historicalRatiosTable = (data: typeof view.fundStore) => [
+    { name: 'حاشیه سود خالص', data: data.netMarginData, unit: '٪' },
+    { name: 'حاشیه سود عملیاتی', data: data.opMarginData, unit: '٪' },
+    { name: 'بازده حقوق مالکانه (ROE)', data: data.roeData, unit: '٪' },
+    { name: efficiencyLabel, data: data.efficiencyData, unit: '٪' },
+    { name: 'نسبت P/B', data: data.pbData, unit: ' مرتبه' },
   ];
 
   const chartTabs = [
@@ -468,14 +530,14 @@ function Dashboard({ release, selectedSymbol, detail, status, mainPage, setMainP
     { id: 'net_margin', label: 'حاشیه سود خالص', icon: Percent },
     { id: 'op_margin', label: 'حاشیه سود عملیاتی', icon: Percent },
     { id: 'roe', label: 'ROE', icon: TrendingUp },
-    { id: 'efficiency', label: 'نسبت کارایی', icon: Target }
+    { id: 'efficiency', label: efficiencyLabel, icon: Target }
   ];
 
   const avg1404Monthly = useMemo(() => {
-    const valid = fundStore.incomeData.filter((d: any) => d.year1404 > 0);
+    const valid = view.fundStore.incomeData.filter((d: any) => d.year1404 > 0);
     if (valid.length === 0) return 0;
     return Number((valid.reduce((s: number, d: any) => s + d.year1404, 0) / valid.length).toFixed(1));
-  }, [fundStore.incomeData]);
+  }, [view.fundStore.incomeData]);
 
   const valUnit = currency === 'IRT' ? 'میلیارد تومان' : 'میلیون دلار';
 
@@ -685,6 +747,9 @@ function Dashboard({ release, selectedSymbol, detail, status, mainPage, setMainP
           </div>
         </div>
 
+        {publishedDetail && <PriorityDataGaps detail={publishedDetail} corrections={corrections}
+          onSave={saveCorrection} cardStyle={cardStyle} />}
+
         {/* EXCEL PARSE PREVIEW BANNER */}
         {excelParsePreview && (
           <div className="max-w-7xl w-full mx-auto px-4 md:px-6 mt-4">
@@ -856,8 +921,19 @@ function Dashboard({ release, selectedSymbol, detail, status, mainPage, setMainP
           </ErrorBoundary>
         )}
 
+        {indexOnly && <p role="status" className={`mx-4 mt-4 p-4 rounded-xl border ${cardStyle}`}>
+          استخراج گزارش‌های تفصیلی کدال در این نسخه انجام نشده است
+        </p>}
+        {localFundStore && <div role="status" className={`mx-4 mt-4 p-4 rounded-xl border flex flex-wrap items-center gap-3 ${cardStyle}`}>
+          <div>
+            <strong>داده بارگذاری‌شده توسط کاربر (محلی)</strong>
+            <p className="text-xs">ورودی محلی برای پیش‌بینی است. نمودارها و نسبت‌های بنیادی از داده منتشرشده خوانده می‌شوند.</p>
+          </div>
+          <button onClick={handleResetFundamentalStore} className="rounded border px-3 py-1.5 text-xs">بازنشانی داده محلی</button>
+        </div>}
+
         {/* TAB 2: FUNDAMENTAL */}
-        {mainPage === 'fundamental' && (
+        {mainPage === 'fundamental' && !indexOnly && (
           <ErrorBoundary sectionName="داده‌های بنیادی و مالی">
             <main className="max-w-7xl w-full mx-auto px-4 md:px-6 mt-6 space-y-6 pb-12">
               <div className={`p-4 rounded-2xl border flex flex-wrap items-center justify-between gap-3 ${cardStyle}`}>
@@ -867,7 +943,6 @@ function Dashboard({ release, selectedSymbol, detail, status, mainPage, setMainP
                 </div>
                 <div className="flex gap-2">
                   <button onClick={() => fileInputRef.current?.click()} className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold cursor-pointer">انتخاب فایل‌های اکسل</button>
-                  {fundStore.lastExcelFileName && <button onClick={handleResetFundamentalStore} className={`px-3 py-2 rounded-xl border text-xs cursor-pointer ${borderSubtle}`}>بازنشانی</button>}
                 </div>
               </div>
 
@@ -875,7 +950,20 @@ function Dashboard({ release, selectedSymbol, detail, status, mainPage, setMainP
                 <section className={`rounded-2xl border p-6 xl:col-span-2 ${cardStyle}`}>
                   <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                     <h2 className={`text-lg font-bold ${textHeading}`}>نمودارهای بنیادی ({activeConfig.ticker})</h2>
-                    {view.scopeLabel && <p className="text-xs">صورت‌های سالانه ۱۲ماهه · {view.scopeLabel}</p>}
+                    {view.statementScopes.length > 1 ? (
+                      <label className="text-xs">
+                        دامنه صورت مالی
+                        <select className={`mx-2 p-1 rounded border ${subCardStyle}`} value={annualScope}
+                          onChange={event => setAnnualScope(event.target.value as AnnualScope | 'separate')}>
+                          <option value="separate">نمایش تفکیکی دامنه‌ها</option>
+                          {view.statementScopes.map(scope => <option key={scope} value={scope}>{fiscalScope[scope]}</option>)}
+                        </select>
+                      </label>
+                    ) : view.statementScopes[0] && (
+                      <span className={`text-xs px-2 py-1 rounded border ${subCardStyle}`}>
+                        مبنای گزارش: {view.statementScopes[0] === 'standalone' ? 'شرکت اصلی (Standalone)' : fiscalScope[view.statementScopes[0]]}
+                      </span>
+                    )}
                     {view.revisionHistory.length > 0 && <details className="text-xs border rounded p-2">
                       <summary className="cursor-pointer">تاریخچه اصلاحیه‌ها</summary>
                       {view.revisionHistory.map(row => <p key={row.revisionId} dir="auto">
@@ -891,22 +979,41 @@ function Dashboard({ release, selectedSymbol, detail, status, mainPage, setMainP
                       ))}
                     </div>
                   </div>
+                  {view.latestInterim && <aside className={`p-4 mb-4 border rounded-xl ${subCardStyle}`}>
+                    <h3 className="font-bold text-sm">آخرین گزارش میاندوره‌ای ۱۴۰۵</h3>
+                    <p className="mt-1 text-xs">
+                      {toPersianDigits(String(view.latestInterim.periodMonths))} ماهه · {fiscalScope[view.latestInterim.consolidationScope]} · {' '}
+                      {auditLabel(view.latestInterim.isAudited)}
+                      {view.latestInterim.periodEndJalali && ` · ${toPersianDigits(view.latestInterim.periodEndJalali)}`}
+                    </p>
+                    <p className="mt-2 text-xs">درآمد عملیاتی {formatNum(view.latestInterim.revenue)} · سود خالص {formatNum(view.latestInterim.netProfit)} میلیارد تومان</p>
+                    {view.latestInterim.sourceUrl && <a href={view.latestInterim.sourceUrl} target="_blank" rel="noreferrer" className="text-xs underline">گزارش کدال</a>}
+                  </aside>}
+                  {activeTab === 'monthly_income' && <h3 className="text-sm mb-2 font-bold">{isHolding
+                    ? 'گزارش فعالیت ماهانه (صورت وضعیت پرتفوی — فاقد فروش عملیاتی)' : 'درآمد ماهانه'}</h3>}
+                  {activeTab === 'monthly_income' && !hasPublishedMonthly && !isHolding &&
+                    <p className="text-sm">مبلغ درآمد ماهانه در این نسخه منتشر نشده است.</p>}
+                  {activeTab !== 'monthly_income' && scopedCharts.length === 0 &&
+                    <p className="text-sm">صورت مالی برای دامنه انتخاب‌شده ثبت نشده است.</p>}
+                  {(activeTab === 'monthly_income' ? hasPublishedMonthly ? [{ scope: null, data: view.fundStore, timeline: view.financialTimeline }] : [] : scopedCharts).map(chart =>
+                    <div key={chart.scope ?? 'monthly'}>
+                      {chart.scope && <h3 className="text-xs font-bold pt-4">دوره‌های مالی ۱۴۰۰ تا ۱۴۰۵ · {fiscalScope[chart.scope]}</h3>}
                   <div className="h-[320px] w-full" dir="ltr">
                     <ResponsiveContainer width="100%" height="100%">
                       {activeTab === 'annual_income' ? (
-                        <ComposedChart data={dynamicAnnualIncomeData}>
+                        <ComposedChart data={annualIncomeForCurrency(chart.timeline)}>
                           <CartesianGrid strokeDasharray="2 5" vertical={false} stroke={gridStroke} />
-                          <XAxis dataKey="year" tick={{ fill: axisTickColor }} />
-                          <YAxis tickFormatter={compactNumber} tick={{ fill: axisTickColor }} />
+                          <XAxis dataKey="label" interval={0} height={54} tick={<FinancialPeriodTick fill={axisTickColor} />} />
+                          <YAxis width={84} tickFormatter={formatChartNumber} tick={{ fill: axisTickColor }} label={{ value: valUnit, angle: -90, position: 'insideLeft', fill: axisTickColor }} />
                           <Tooltip content={<CustomTooltip unit={valUnit} darkMode={darkMode} />} />
                           <Bar dataKey={currency === 'IRT' ? 'value' : 'usdValue'} name="درآمد عملیاتی" fill="url(#series-f59e0b)" radius={[4, 4, 0, 0]} maxBarSize={45} />
                           <Line type="monotone" dataKey={currency === 'IRT' ? 'netProfit' : 'usdNetProfit'} name="سود خالص" stroke="#10b981" strokeWidth={3} />
                         </ComposedChart>
                       ) : activeTab === 'monthly_income' ? (
-                        <BarChart data={fundStore.incomeData}>
+                        <BarChart data={view.fundStore.incomeData}>
                           <CartesianGrid strokeDasharray="2 5" vertical={false} stroke={gridStroke} />
                           <XAxis dataKey="month" tick={{ fill: axisTickColor }} />
-                          <YAxis tickFormatter={compactNumber} tick={{ fill: axisTickColor }} />
+                          <YAxis width={84} tickFormatter={formatChartNumber} tick={{ fill: axisTickColor }} label={{ value: 'میلیارد تومان', angle: -90, position: 'insideLeft', fill: axisTickColor }} />
                           <Tooltip content={<CustomTooltip unit="میلیارد تومان" darkMode={darkMode} />} />
                           {avg1404Monthly > 0 && <ReferenceLine y={avg1404Monthly} stroke="#10b981" strokeDasharray="5 5" />}
                           <Bar dataKey="year1403" name="۱۴۰۳" fill="url(#series-6366f1)" radius={[4, 4, 0, 0]} maxBarSize={28} />
@@ -914,41 +1021,36 @@ function Dashboard({ release, selectedSymbol, detail, status, mainPage, setMainP
                           <Bar dataKey="year1405" name="۱۴۰۵" fill="url(#series-f59e0b)" radius={[4, 4, 0, 0]} maxBarSize={28} />
                         </BarChart>
                       ) : activeTab === 'income_breakdown' ? (
-                        <BarChart
-                          data={fundStore.annualIncomeData.map((item: any) => ({
-                            year: item.year, revenue: item.value, cost: item.cost ?? null,
-                            opProfit: item.opProfit ?? null, netProfit: item.netProfit,
-                          }))}
-                        >
+                        <BarChart data={chart.timeline}>
                           <CartesianGrid strokeDasharray="2 5" vertical={false} stroke={gridStroke} />
-                          <XAxis dataKey="year" tick={{ fill: axisTickColor }} />
-                          <YAxis tickFormatter={compactNumber} tick={{ fill: axisTickColor }} />
+                          <XAxis dataKey="label" interval={0} height={54} tick={<FinancialPeriodTick fill={axisTickColor} />} />
+                          <YAxis width={84} tickFormatter={formatChartNumber} tick={{ fill: axisTickColor }} label={{ value: 'میلیارد تومان', angle: -90, position: 'insideLeft', fill: axisTickColor }} />
                           <Tooltip content={<CustomTooltip unit="میلیارد تومان" darkMode={darkMode} />} />
-                          <Bar dataKey="revenue" name="درآمد عملیاتی" fill="url(#series-f59e0b)" radius={[4, 4, 0, 0]} maxBarSize={26} />
+                          <Bar dataKey="value" name="درآمد عملیاتی" fill="url(#series-f59e0b)" radius={[4, 4, 0, 0]} maxBarSize={26} />
                           <Bar dataKey="cost" name="بهای تمام‌شده / هزینه" fill="url(#series-ef4444)" radius={[4, 4, 0, 0]} maxBarSize={26} />
                           <Bar dataKey="opProfit" name="سود عملیاتی" fill="url(#series-3b82f6)" radius={[4, 4, 0, 0]} maxBarSize={26} />
                           <Bar dataKey="netProfit" name="سود خالص" fill="url(#series-10b981)" radius={[4, 4, 0, 0]} maxBarSize={26} />
                         </BarChart>
                       ) : activeTab === 'cash_flow' ? (
-                        <BarChart data={fundStore.cashFlowData}>
+                        <BarChart data={chart.timeline}>
                           <CartesianGrid strokeDasharray="2 5" vertical={false} stroke={gridStroke} />
-                          <XAxis dataKey="year" tick={{ fill: axisTickColor }} />
-                          <YAxis tickFormatter={compactNumber} tick={{ fill: axisTickColor }} />
+                          <XAxis dataKey="label" interval={0} height={54} tick={<FinancialPeriodTick fill={axisTickColor} />} />
+                          <YAxis width={84} tickFormatter={formatChartNumber} tick={{ fill: axisTickColor }} label={{ value: 'میلیارد تومان', angle: -90, position: 'insideLeft', fill: axisTickColor }} />
                           <Tooltip content={<CustomTooltip unit="میلیارد تومان" darkMode={darkMode} />} />
                           <ReferenceLine y={0} stroke={axisTickColor} />
-                          <Bar dataKey="value" name="جریان نقد عملیاتی (OCF)" fill="url(#series-06b6d4)" radius={[4, 4, 0, 0]} maxBarSize={45} />
+                          <Bar dataKey="cashFlow" name="جریان نقد عملیاتی (OCF)" fill="url(#series-06b6d4)" radius={[4, 4, 0, 0]} maxBarSize={45} />
                         </BarChart>
                       ) : activeTab === 'balance_sheet' ? (
-                        <BarChart data={fundStore.balanceSheetData}>
+                        <BarChart data={chart.timeline}>
                           <CartesianGrid strokeDasharray="2 5" vertical={false} stroke={gridStroke} />
-                          <XAxis dataKey="year" tick={{ fill: axisTickColor }} />
-                          <YAxis tickFormatter={compactNumber} tick={{ fill: axisTickColor }} />
+                          <XAxis dataKey="label" interval={0} height={54} tick={<FinancialPeriodTick fill={axisTickColor} />} />
+                          <YAxis width={84} tickFormatter={formatChartNumber} tick={{ fill: axisTickColor }} label={{ value: 'میلیارد تومان', angle: -90, position: 'insideLeft', fill: axisTickColor }} />
                           <Tooltip content={<CustomTooltip unit="میلیارد تومان" darkMode={darkMode} />} />
                           <Bar dataKey="equity" name="حقوق مالکانه" fill="url(#series-10b981)" radius={[4, 4, 0, 0]} maxBarSize={38} />
                           <Bar dataKey="liabilities" name="کل بدهی‌ها" fill="url(#series-f43f5e)" radius={[4, 4, 0, 0]} maxBarSize={38} />
                         </BarChart>
                       ) : activeTab === 'pb_ratio' ? (
-                        <LineChart data={fundStore.pbData}>
+                        <LineChart data={chart.data.pbData}>
                           <CartesianGrid strokeDasharray="2 5" vertical={false} stroke={gridStroke} />
                           <XAxis dataKey="year" tick={{ fill: axisTickColor }} />
                           <YAxis tickFormatter={compactNumber} tick={{ fill: axisTickColor }} />
@@ -956,7 +1058,7 @@ function Dashboard({ release, selectedSymbol, detail, status, mainPage, setMainP
                           <Line type="monotone" dataKey="value" name="نسبت P/B" stroke="#8b5cf6" strokeWidth={3} dot={{ r: 4 }} />
                         </LineChart>
                       ) : activeTab === 'op_margin' ? (
-                        <LineChart data={fundStore.opMarginData}>
+                        <LineChart data={chart.data.opMarginData}>
                           <CartesianGrid strokeDasharray="2 5" vertical={false} stroke={gridStroke} />
                           <XAxis dataKey="year" tick={{ fill: axisTickColor }} />
                           <YAxis tickFormatter={compactNumber} tick={{ fill: axisTickColor }} />
@@ -964,7 +1066,7 @@ function Dashboard({ release, selectedSymbol, detail, status, mainPage, setMainP
                           <Line type="monotone" dataKey="value" name="حاشیه سود عملیاتی" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4 }} />
                         </LineChart>
                       ) : activeTab === 'roe' ? (
-                        <LineChart data={fundStore.roeData}>
+                        <LineChart data={chart.data.roeData}>
                           <CartesianGrid strokeDasharray="2 5" vertical={false} stroke={gridStroke} />
                           <XAxis dataKey="year" tick={{ fill: axisTickColor }} />
                           <YAxis tickFormatter={compactNumber} tick={{ fill: axisTickColor }} />
@@ -972,15 +1074,15 @@ function Dashboard({ release, selectedSymbol, detail, status, mainPage, setMainP
                           <Line type="monotone" dataKey="value" name="بازده حقوق مالکانه (ROE)" stroke="#f59e0b" strokeWidth={3} dot={{ r: 4 }} />
                         </LineChart>
                       ) : activeTab === 'efficiency' ? (
-                        <LineChart data={fundStore.efficiencyData}>
+                        <LineChart data={chart.data.efficiencyData}>
                           <CartesianGrid strokeDasharray="2 5" vertical={false} stroke={gridStroke} />
                           <XAxis dataKey="year" tick={{ fill: axisTickColor }} />
                           <YAxis tickFormatter={compactNumber} tick={{ fill: axisTickColor }} />
                           <Tooltip content={<CustomTooltip unit="٪" darkMode={darkMode} />} />
-                          <Line type="monotone" dataKey="value" name="بهای تمام‌شده / هزینه به درآمد" stroke="#ef4444" strokeWidth={3} dot={{ r: 4 }} />
+                          <Line type="monotone" dataKey="value" name={efficiencyLabel} stroke="#ef4444" strokeWidth={3} dot={{ r: 4 }} />
                         </LineChart>
                       ) : (
-                        <LineChart data={fundStore.netMarginData}>
+                        <LineChart data={chart.data.netMarginData}>
                           <CartesianGrid strokeDasharray="2 5" vertical={false} stroke={gridStroke} />
                           <XAxis dataKey="year" tick={{ fill: axisTickColor }} />
                           <YAxis tickFormatter={compactNumber} tick={{ fill: axisTickColor }} />
@@ -990,12 +1092,15 @@ function Dashboard({ release, selectedSymbol, detail, status, mainPage, setMainP
                       )}
                     </ResponsiveContainer>
                   </div>
+                    </div>
+                  )}
                 </section>
 
                 <section className={`rounded-2xl border p-6 ${cardStyle}`}>
                   <h2 className={`text-base font-bold mb-4 ${textHeading}`}>نسبت‌های مالی کلیدی</h2>
+                  <p className="text-xs mb-3">{view.scopeLabel ?? '—'}</p>
                   <div className="grid grid-cols-2 gap-3">
-                    {fundStore.ratiosDef.map((r: any) => {
+                    {view.fundStore.ratiosDef.map(r => {
                       const badge = r.status ? formatRatioBadge(r.status, r.value, r.unit, r.missingInputs) : null;
                       return (
                       <div key={r.id} className={`p-3 rounded-xl border text-center ${subCardStyle}`}>
@@ -1007,27 +1112,45 @@ function Dashboard({ release, selectedSymbol, detail, status, mainPage, setMainP
                 </section>
               </div>
 
-              <section className={`rounded-2xl border overflow-hidden ${cardStyle}`}>
-                <div className={`p-4 border-b font-bold text-sm ${borderSubtle}`}>تاریخچه نسبت‌های مالی</div>
+              {(scopedCharts.length ? scopedCharts : [{ scope: null, data: view.fundStore }]).map(chart => (
+              <section key={chart.scope ?? 'coverage'} className={`rounded-2xl border overflow-hidden ${cardStyle}`}>
+                <div className={`p-4 border-b font-bold text-sm ${borderSubtle}`}>تاریخچه نسبت‌های مالی {chart.scope && ' · ' + fiscalScope[chart.scope]}</div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs text-right">
                     <thead className={tableHeaderBg}>
                       <tr>
                         <th className="p-3">نسبت</th>
-                        {fundStore.netMarginData.map((row: { year: string }) => <th className="p-3 text-center" key={row.year}>{row.year}</th>)}
+                        {view.annualYears.map(year => <th className="p-3 text-center" key={year.year}>{year.label}</th>)}
                       </tr>
                     </thead>
                     <tbody className={`divide-y ${darkMode ? 'divide-slate-800' : 'divide-slate-100'}`}>
-                      {historicalRatiosTable.map((row, idx) => (
+                      <tr>
+                        <td className="p-3">پوشش صورت سالانه</td>
+                        {view.annualYears.map(year => {
+                          const statement = chart.data.annualIncomeData.find(item => item.year === year.label);
+                          return <td key={year.year} className="p-3 text-center">
+                            {statement ? auditLabel(statement.isAudited)
+                              : year.note?.status === 'published_unextracted' ? 'منتشرشده؛ استخراج در انتظار'
+                                : year.note?.status === 'no_eligible_filing_found' ? 'گزارش واجد شرایط پیدا نشد' : '—'}
+                          </td>;
+                        })}
+                      </tr>
+                      {historicalRatiosTable(chart.data).map((row, idx) => (
                         <tr key={idx} className={tableRowHover}>
                           <td className="p-3 font-medium">{row.name}</td>
-                          {row.data.map((d: any, i: number) => <td key={i} className="p-3 text-center" dir="ltr">{d.value == null ? '—' : String(d.value) + row.unit}</td>)}
+                          {view.annualYears.map(year => {
+                            const data = row.data.find(item => item.year === year.label);
+                            return <td key={year.year} className="p-3 text-center" dir="ltr">
+                              {data?.status === 'not_applicable' ? 'نامرتبط' : data?.value == null ? '—' : String(data.value) + row.unit}
+                            </td>;
+                          })}
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
               </section>
+              ))}
             </main>
           </ErrorBoundary>
         )}
@@ -1291,7 +1414,7 @@ function Dashboard({ release, selectedSymbol, detail, status, mainPage, setMainP
         )}
 
         {/* TAB 6: SMART SALES & EPS FORECAST */}
-        {mainPage === 'forecast' && (
+        {mainPage === 'forecast' && (!indexOnly || localFundStore) && (
           <ErrorBoundary sectionName="پیش‌بینی فروش و EPS">
             <Suspense fallback={<p role="status">در حال بارگذاری پیش‌بینی…</p>}>
             <ForecastTab
