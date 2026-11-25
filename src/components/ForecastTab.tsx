@@ -33,7 +33,7 @@ export function ForecastTab({
   const [priceGrowthRate, setPriceGrowthRate] = useState<number>(activeConfig.key === 'nan' ? 18 : 10);
   const [volumeGrowthRate, setVolumeGrowthRate] = useState<number>(5);
   const [estimatedNetMargin, setEstimatedNetMargin] = useState<number>(
-    activeConfig.interimReport?.netMargin || (activeConfig.key === 'nan' ? 14.3 : 103)
+    fundStore.interimReport?.netMargin ?? 0
   );
 
   const [monthlyRows, setMonthlyRows] = useState<
@@ -41,7 +41,7 @@ export function ForecastTab({
   >([]);
 
   useEffect(() => {
-    const defaultNetMargin = fundStore.interimReport?.netMargin || (activeConfig.key === 'nan' ? 14.3 : 103);
+    const defaultNetMargin = fundStore.interimReport?.netMargin ?? 0;
     setEstimatedNetMargin(defaultNetMargin);
     setPriceGrowthRate(activeConfig.key === 'nan' ? 18 : 10);
 
@@ -128,11 +128,11 @@ export function ForecastTab({
     const totalAnnualSales = realizedSales + remainingForecastSales;
     const estimatedNetProfit = totalAnnualSales * (estimatedNetMargin / 100);
 
-    const totalShares = Number(liveData.z || 62000000000);
-    const forwardEps = totalShares > 0 ? (estimatedNetProfit * 1e10) / totalShares : 0;
-    const currentTtmEps = Number(liveData.eps || 0);
+    const totalShares = Number(liveData.z ?? 0);
+    const forwardEps = totalShares > 0 ? (estimatedNetProfit * 1e10) / totalShares : null;
+    const currentTtmEps = (liveData.eps ?? null);
     const epsGrowthPercent =
-      currentTtmEps > 0 ? ((forwardEps - currentTtmEps) / currentTtmEps) * 100 : 0;
+      currentTtmEps !== null && currentTtmEps > 0 && forwardEps !== null ? ((forwardEps - currentTtmEps) / currentTtmEps) * 100 : null;
 
     return {
       realizedSales,
@@ -177,11 +177,11 @@ export function ForecastTab({
             </div>
             <span
               className={`text-xs font-bold mt-1 inline-block ${
-                summary.epsGrowthPercent >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                (summary.epsGrowthPercent ?? 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'
               }`}
               dir="ltr"
             >
-              {summary.epsGrowthPercent >= 0
+              {summary.epsGrowthPercent === null ? 'داده کافی برای مقایسه EPS موجود نیست' : summary.epsGrowthPercent >= 0
                 ? `+${formatNum(summary.epsGrowthPercent, 1)}% رشد نسبت به TTM`
                 : `${formatNum(summary.epsGrowthPercent, 1)}% تغییر نسبت به TTM`}
             </span>

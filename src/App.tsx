@@ -1,24 +1,33 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { fetchOptimizedCodalData, type CodalSmartSyncResult } from './utils/brsApiFinancialService';
+import { marketRepository } from './repositories/MarketDataRepository';
+import type { ManifestData, MasterIndexData, SymbolDetailData } from './types/marketContract';
+import { runIdempotentLegacyMigration, readUserStorage } from './utils/legacyStorageMigration';
+import { formatRatioBadge, instrumentProfile, mapContractDetail, normalizeMarketSearch, parseDecimalSafe } from './utils/contractViewMapper';
+import { createMarketBackup, prepareMarketRestore, restoreMarketBackup } from './utils/marketBackup';
+import { calculateRatios } from './utils/financialRatios';
+import {CompanyHeader,useTerminalTheme,ChartGradients,compactNumber} from './components/Terminal';
+import React, { lazy, Suspense, useState, useEffect, useMemo, useRef } from 'react';
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, ReferenceLine, ComposedChart, PieChart as RechartsPieChart, Pie, Cell
+  ResponsiveContainer, ReferenceLine, ComposedChart
 } from 'recharts';
 import {
   Building2, TrendingUp, Activity, Target,
   BarChart as BarChartIcon, Percent, Layers, Calculator,
-  GitCompare, DollarSign, RefreshCw, Sun, Moon, Download, LayoutDashboard,
-  Users, Menu, X, BookOpen, Upload, FolderUp, BellRing, Sparkles, Scale, Briefcase, Database,
-  Search, Factory, PlusCircle, FileSpreadsheet
+  DollarSign, RefreshCw, Download, LayoutDashboard,
+  Menu, X, BookOpen, Upload, FolderUp, BellRing, Sparkles, Scale, Briefcase, Database,
+  Search, Factory
 } from 'lucide-react';
-import {
-  API_KEY, type SymbolKey, SYMBOLS_CONFIG, TSE_INDUSTRY_GROUPS,
-  createDynamicSymbolProfile, isAllowedCodalAnnouncement, type SymbolProfile
-} from './data/symbolsConfig';
-import { ForecastTab } from './components/ForecastTab';
+
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { parseCodalExcelBuffer, PERSIAN_MONTHS, normalizeDigits } from './utils/excelParser';
-import { mapPythonArchiveToDashboard } from './utils/offlineArchiveAdapter';
+import { PERSIAN_MONTHS, normalizeDigits } from './utils/persianFormat';
+
+const ForecastTab = lazy(() => import('./components/ForecastTab').then(module => ({ default: module.ForecastTab })));
+const MarketFixtures = lazy(() => import('./components/MarketFixtures').then(module => ({ default: module.MarketFixtures })));
+
+function selectedInstrumentFromUrl() {
+  return /^#\/symbols\/(INS_[A-Z0-9_-]+)$/.exec(location.hash)?.[1]
+    ?? new URLSearchParams(location.search).get('instrument');
+}
 
 const toPersianDigits = (str: string) => {
   const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
@@ -37,7 +46,7 @@ const CustomTooltip = ({ active, payload, label, unit = '', darkMode = false }: 
               <span className={darkMode ? 'text-slate-300' : 'text-slate-600'}>{entry.name}:</span>
             </div>
             <span className="font-bold" dir="ltr">
-              {entry.value !== null ? entry.value : '-'} {entry.value !== null && unit}
+              {typeof entry.value === 'number' ? entry.value.toLocaleString('fa-IR') : entry.value ?? '—'} {entry.value !== null && unit}
             </span>
           </div>
         ))}
@@ -47,50 +56,103 @@ const CustomTooltip = ({ active, payload, label, unit = '', darkMode = false }: 
   return null;
 };
 
+type DashboardPage = 'overview' | 'fundamental' | 'interpretive' | 'disclosures' | 'valuation' | 'forecast' | 'fixtures';
+
 export default function App() {
-  const [symbolsRegistry, setSymbolsRegistry] = useState<Record<string, SymbolProfile>>(() => {
-    try {
-      const savedCustom = localStorage.getItem('custom_symbols_registry_v1');
-      if (savedCustom) {
-        return { ...SYMBOLS_CONFIG, ...JSON.parse(savedCustom) };
-      }
-    } catch {
-      // ignore
-    }
-    return SYMBOLS_CONFIG;
-  });
+  const [release, setRelease] = useState<{ manifest: ManifestData; index: MasterIndexData }>();
+  const [error, setError] = useState('');
+  const [attempt, setAttempt] = useState(0);
+  const [selected, setSelected] = useState(selectedInstrumentFromUrl);
+  const [page, setPage] = useState<DashboardPage>('overview');
+  const [restoreVersion, setRestoreVersion] = useState(0);
+  useEffect(runIdempotentLegacyMigration, []);
+  useEffect(() => {
+    const onRoute = () => setSelected(selectedInstrumentFromUrl());
+    window.addEventListener('hashchange', onRoute);
+    return () => window.removeEventListener('hashchange', onRoute);
+  }, []);
+  useEffect(() => {
+    const controller = new AbortController();
+    const { signal } = controller;
+    marketRepository.getManifest(signal).then(async manifest => {
+      const index = await marketRepository.getMasterIndex(manifest, signal);
+      if (!signal.aborted) setRelease({ manifest, index });
+    }).catch(() => { if (!signal.aborted) setError('بارگذاری فهرست داده‌ها ناموفق بود.'); });
+    return () => controller.abort();
+  }, [attempt]);
+  const instrument = release?.index.instruments.find(item => item.instrumentId === selected) ?? release?.index.instruments[0];
+  const requestKey = release && instrument ? release.manifest.releaseId + ':' + instrument.instrumentId : null;
+  const requestIdentity = useRef(requestKey);
+  useEffect(() => { requestIdentity.current = requestKey; }, [requestKey]);
+  const [result, setResult] = useState<{ key: string; detail: SymbolDetailData | null; failed: boolean }>();
+  useEffect(() => {
+    if (!release || !instrument || !requestKey) return;
+    const controller = new AbortController();
+    const commit = (detail: SymbolDetailData | null, failed: boolean) => {
+      if (!controller.signal.aborted && requestIdentity.current === requestKey) setResult({ key: requestKey, detail, failed });
+    };
+    marketRepository.getSymbolDetail(release.manifest, instrument, controller.signal)
+      .then(detail => commit(detail, false)).catch(() => commit(null, true));
+    return () => controller.abort();
+  }, [release, instrument, requestKey, attempt]);
+  if (!release || !instrument) return <main dir="rtl" className="p-6" role={error ? 'alert' : 'status'}>
+    {error || 'در حال بارگذاری فهرست نمادها…'}
+    {error && <button className="mx-4 underline" onClick={() => { setError(''); setAttempt(value => value + 1); }}>تلاش دوباره</button>}
+  </main>;
+  const active = result?.key === requestKey ? result : undefined;
+  return <Dashboard key={requestKey + (active ? ':ready' : ':loading') + ':' + restoreVersion}
+    release={release} selectedSymbol={instrument.instrumentId} detail={active?.detail ?? null}
+    status={active?.failed ? 'بارگذاری پرونده ناشر ناموفق بود' : !active ? 'در حال بارگذاری پرونده ناشر…' : active.detail ? 'پرونده ناشر آماده است' : 'پرونده مالی موجود نیست'}
+    mainPage={page} setMainPage={setPage} onRestore={() => setRestoreVersion(value => value + 1)} refresh={() => setAttempt(value => value + 1)}
+    selectInstrument={id => {
+      const url = new URL(location.href);
+      url.searchParams.delete('instrument');
+      url.hash = '/symbols/' + id;
+      if (url.href !== location.href) history.pushState(history.state, '', url);
+      requestIdentity.current = release.manifest.releaseId + ':' + id;
+      setSelected(id);
+    }} />;
+}
 
-  const [selectedSymbol, setSelectedSymbol] = useState<SymbolKey>('kala');
-  const [symbolSearchQuery, setSymbolSearchQuery] = useState<string>('');
-  const [selectedIndustryFilter, setSelectedIndustryFilter] = useState<string>('همه گروه‌های صنعتی');
-
-  const activeConfig = symbolsRegistry[selectedSymbol] || SYMBOLS_CONFIG.kala;
-  const TSE_API_URL = `https://Api.BrsApi.ir/Tsetmc/Symbol.php?key=${API_KEY}&l18=${encodeURIComponent(activeConfig.apiL18)}`;
-
-  const TSE_CACHE_KEY = `${selectedSymbol}_tse_live_v11`;
-  const CODAL_CACHE_KEY = `${selectedSymbol}_codal_archive_v11`;
-  const INTERPRETIVE_NOTES_KEY = `${selectedSymbol}_interpretive_notes_v11`;
-  const FUNDAMENTAL_DYNAMIC_KEY = `${selectedSymbol}_fundamental_data_v11`;
-
-  const [mainPage, setMainPage] = useState<'overview' | 'fundamental' | 'interpretive' | 'disclosures' | 'valuation' | 'forecast'>('overview');
-  const [darkMode, setDarkMode] = useState<boolean>(true);
+function Dashboard({ release, selectedSymbol, detail, status, mainPage, setMainPage, refresh, selectInstrument, onRestore }: {
+  release: { manifest: ManifestData; index: MasterIndexData };
+  selectedSymbol: string;
+  detail: SymbolDetailData | null;
+  status: string;
+  mainPage: DashboardPage;
+  setMainPage: (page: DashboardPage) => void;
+  refresh: () => void;
+  onRestore: () => void;
+  selectInstrument: (id: string) => void;
+}) {
+  const instruments = release.index.instruments;
+  const sectors = release.index.sectors;
+  const instrument = instruments.find(item => item.instrumentId === selectedSymbol)!;
+  const profiles = instruments.map(item => instrumentProfile(item, sectors.find(sector => sector.id === item.sectorId)?.nameFa ?? '—'));
+  const activeConfig = profiles.find(item => item.key === selectedSymbol)!;
+  const view = useMemo(() => mapContractDetail(detail), [detail]);
+  const snapshot = instrument.snapshot;
+  const liveData = useMemo(() => ({
+    pc: parseDecimalSafe(snapshot?.closePrice), mv: parseDecimalSafe(snapshot?.marketCapIrr),
+    pe: parseDecimalSafe(snapshot?.peTtm), pb: parseDecimalSafe(snapshot?.pb),
+    eps: null, z: null, pcp: null, pmin_1y: null, pmax_1y: null,
+    m_board: instrument.venue ?? '—',
+  }), [snapshot, instrument.venue]);
+  const INTERPRETIVE_NOTES_KEY = instrument.issuerId + '_user_notes_v2';
+  const FUNDAMENTAL_DYNAMIC_KEY = instrument.issuerId + '_user_overrides_v2';
+  const [symbolSearchQuery, setSymbolSearchQuery] = useState('');
+  const [selectedIndustryFilter, setSelectedIndustryFilter] = useState('همه گروه‌های صنعتی');
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
+  const {theme,setTheme,darkMode} = useTerminalTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
 
-  const [liveData, setLiveData] = useState<any>(activeConfig.defaultLive);
-  const [tseLoading, setTseLoading] = useState<boolean>(false);
-  const [tseStatus, setTseStatus] = useState<{ type: string; text: string }>({
-    type: 'info',
-    text: `اطلاعات تابلو ${activeConfig.ticker} (${activeConfig.fullName}) آماده است`
-  });
-
-  const [codalList, setCodalList] = useState<any[]>(activeConfig.defaultCodal);
-  const [liveDisclosures, setLiveDisclosures] = useState<any[]>(activeConfig.defaultDisclosures);
-  const [codalLoading, setCodalLoading] = useState<boolean>(false);
-  const [codalQuickLinks, setCodalQuickLinks] = useState<CodalSmartSyncResult | null>(null);
-  const [codalStatus, setCodalStatus] = useState<{ type: string; text: string }>({
-    type: 'info',
-    text: `آرشیو کدال ${activeConfig.ticker} (${activeConfig.fullName}) بارگذاری شد`
-  });
+  const codalList = view.codalAnnouncements;
+  const liveDisclosures = view.disclosuresList;
+  const [localStatus, setCodalStatus] = useState<{ type: string; text: string }>();
 
   const [codalSearch, setCodalSearch] = useState<string>('');
   const [codalYearFilter, setCodalYearFilter] = useState<string>('all');
@@ -100,12 +162,23 @@ export default function App() {
   const [disclosureGroupFilter, setDisclosureGroupFilter] = useState<'all' | 'الف' | 'ب'>('all');
   const [valInputs, setValInputs] = useState(activeConfig.defaultValInputs);
 
-  const [fundStore, setFundStore] = useState<any>(activeConfig.defaultFundamental);
+  const [fundStore, setFundStore] = useState<any>(() => readUserStorage(FUNDAMENTAL_DYNAMIC_KEY) ?? view.fundStore);
   const [excelParsePreview, setExcelParsePreview] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const jsonRestoreInputRef = useRef<HTMLInputElement | null>(null);
 
-  const [interpretiveList, setInterpretiveList] = useState<any[]>(activeConfig.defaultInterpretive);
+  const [interpretiveList, setInterpretiveList] = useState<any[]>(() => {
+    const stored = readUserStorage<any[]>(INTERPRETIVE_NOTES_KEY);
+    if (!Array.isArray(stored)) return view.interpretiveList;
+    const matched = new Set<unknown>();
+    const published = view.interpretiveList.map(report => {
+      const notes = stored.find(item => item?.id ? item.id === report.id : item?.publishDate && item.publishDate === report.publishDate);
+      if (!notes) return report;
+      matched.add(notes);
+      return { ...report, highlights: [...new Set([...report.highlights, ...(Array.isArray(notes.highlights) ? notes.highlights : [])])] };
+    });
+    return [...published, ...stored.filter(item => item && !matched.has(item) && Array.isArray(item.highlights))];
+  });
   const [selectedPeriodIdx, setSelectedPeriodIdx] = useState<number>(0);
   const [newNoteText, setNewNoteText] = useState<string>('');
 
@@ -113,257 +186,56 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('annual_income');
   const [currency] = useState('IRT');
   const [customUsdRate] = useState(65000);
-  const [compareStock, setCompareStock] = useState('none');
 
-  const filteredSymbolsList = useMemo(() => {
-    const all = Object.values(symbolsRegistry);
-    return all.filter((sym) => {
-      const matchesIndustry =
-        selectedIndustryFilter === 'همه گروه‌های صنعتی' ||
-        sym.tseIndustryGroup.includes(selectedIndustryFilter) ||
-        selectedIndustryFilter.includes(sym.tseIndustryGroup);
-
-      const q = symbolSearchQuery.trim().toLowerCase();
-      const matchesQuery =
-        !q ||
-        sym.ticker.toLowerCase().includes(q) ||
-        sym.fullName.toLowerCase().includes(q) ||
-        sym.tseIndustryGroup.toLowerCase().includes(q);
-
-      return matchesIndustry && matchesQuery;
-    });
-  }, [symbolsRegistry, symbolSearchQuery, selectedIndustryFilter]);
-
-  const handleAddAndSelectCustomSymbol = async (rawTicker: string) => {
-    const clean = rawTicker.trim();
-    if (!clean) return;
-
-    const existing = Object.values(symbolsRegistry).find((s) => s.ticker === clean);
-    if (existing) {
-      setSelectedSymbol(existing.key);
-      setSymbolSearchQuery('');
-      return;
-    }
-
-    const newProfile = createDynamicSymbolProfile(clean);
-    const updatedRegistry = { ...symbolsRegistry, [clean]: newProfile };
-    setSymbolsRegistry(updatedRegistry);
-
-    try {
-      const customOnly: Record<string, SymbolProfile> = {};
-      Object.entries(updatedRegistry).forEach(([k, v]) => {
-        if (!SYMBOLS_CONFIG[k]) customOnly[k] = v;
-      });
-      localStorage.setItem('custom_symbols_registry_v1', JSON.stringify(customOnly));
-    } catch {
-      // ignore
-    }
-
-    setSelectedSymbol(clean);
-    setSymbolSearchQuery('');
-
-    try {
-      setTseLoading(true);
-      const res = await fetch(`https://Api.BrsApi.ir/Tsetmc/Symbol.php?key=${API_KEY}&l18=${encodeURIComponent(clean)}`);
-      const data = await res.json();
-      if (data && data.pc) {
-        const industryFromTse = data.cs_sub || data.cs || 'سایر صنایع بورس';
-        const fullNameFromTse = data.l30 || `شرکت ${clean}`;
-        const enriched: SymbolProfile = {
-          ...newProfile,
-          fullName: fullNameFromTse,
-          tseIndustryGroup: industryFromTse,
-          monopolyBadge: `گروه صنعت: ${industryFromTse}`,
-          defaultLive: data
-        };
-        setSymbolsRegistry((prev) => ({ ...prev, [clean]: enriched }));
-        setLiveData(data);
-        localStorage.setItem(`${clean}_tse_live_v11`, JSON.stringify(data));
-        setTseStatus({ type: 'success', text: `نماد ${clean} (${fullNameFromTse}) از بورس بارگذاری شد (۱ درخواست API).` });
-      }
-    } catch {
-      // ignore
-    } finally {
-      setTseLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    const cfg = symbolsRegistry[selectedSymbol] || SYMBOLS_CONFIG.kala;
-    setSelectedPeriodIdx(0);
-    setCodalPage(1);
-    setCodalSearch('');
-    setCodalYearFilter('all');
-    setValInputs(cfg.defaultValInputs);
-    setCodalQuickLinks(null);
-    setExcelParsePreview(null);
-    setLiveDisclosures(cfg.defaultDisclosures);
-
-    try {
-      const cachedTse = localStorage.getItem(`${selectedSymbol}_tse_live_v11`);
-      setLiveData(cachedTse ? JSON.parse(cachedTse) : cfg.defaultLive);
-
-      const cachedCodal = localStorage.getItem(`${selectedSymbol}_codal_archive_v11`);
-      if (cachedCodal) {
-        const parsedCodal = JSON.parse(cachedCodal);
-        setCodalList(Array.isArray(parsedCodal) && parsedCodal.length > 0 ? parsedCodal.filter((i: any) => isAllowedCodalAnnouncement(i.title)) : cfg.defaultCodal);
-      } else {
-        setCodalList(cfg.defaultCodal);
-      }
-
-      const cachedNotes = localStorage.getItem(`${selectedSymbol}_interpretive_notes_v11`);
-      setInterpretiveList(cachedNotes ? JSON.parse(cachedNotes) : cfg.defaultInterpretive);
-
-      const cachedFund = localStorage.getItem(`${selectedSymbol}_fundamental_data_v11`);
-      setFundStore(cachedFund ? JSON.parse(cachedFund) : cfg.defaultFundamental);
-    } catch {
-      setLiveData(cfg.defaultLive);
-      setCodalList(cfg.defaultCodal);
-      setFundStore(cfg.defaultFundamental);
-    }
-  }, [selectedSymbol]);
-
-  useEffect(() => {
-    const baseUrl = import.meta.env.BASE_URL || './';
-    const normalizedBase = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
-    const indexUrl = `${normalizedBase}Dashboard_Data/index.json`;
-
-    fetch(indexUrl)
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
-      .then((indexList) => {
-        if (!Array.isArray(indexList) || indexList.length === 0) {
-          setCodalStatus({ type: 'error', text: 'فایل index.json خالی است یا فرمت آرایه ندارد.' });
-          return;
-        }
-
-        const loadedTickers: string[] = [];
-        setSymbolsRegistry((prev) => {
-          const next: Record<string, SymbolProfile> = { ...prev };
-          for (const meta of indexList) {
-            const t = String(meta.ticker || '').trim();
-            if (!t) continue;
-            loadedTickers.push(t);
-            const existing = Object.values(prev).find((item) => item.ticker === t);
-            next[t] = existing
-              ? {
-                  ...existing,
-                  key: t,
-                  ticker: t,
-                  fullName: (meta as any).company_name || (meta as any).fullName || existing.fullName,
-                  tseIndustryGroup: meta.industry || existing.tseIndustryGroup,
-                }
-              : createDynamicSymbolProfile(
-                  t,
-                  (meta as any).company_name || `شرکت ${t}`,
-                  meta.industry || 'سایر صنایع بورس'
-                );
-          }
-          return next;
-        });
-
-        setCodalStatus({
-          type: 'success',
-          text: `${loadedTickers.length} نماد از Dashboard_Data/index.json بارگذاری شد (${loadedTickers.join('، ')})`,
-        });
-
-        if (loadedTickers.length > 0) {
-          setSelectedSymbol(loadedTickers[0]);
-        }
-      })
-      .catch((err) => {
-        setCodalStatus({
-          type: 'error',
-          text: `عدم دسترسی به Dashboard_Data/index.json (${err.message}) — مطمئن شوید پوشه Dashboard_Data در dist کپی شده است.`,
-        });
-      });
-  }, []);
-
-  useEffect(() => {
-    const cfg = symbolsRegistry[selectedSymbol] || SYMBOLS_CONFIG.kala;
-    const tickerName = String(cfg?.ticker || selectedSymbol || '').trim();
-    if (!tickerName) return;
-
-    const baseUrl = import.meta.env.BASE_URL || './';
-    const normalizedBase = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
-    const archiveUrl = `${normalizedBase}Dashboard_Data/${encodeURIComponent(tickerName)}_Archive.json`;
-
-    fetch(archiveUrl)
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
-      .then((rawArchive) => {
-        if (!rawArchive) return;
-        const mapped = mapPythonArchiveToDashboard(rawArchive);
-        if (mapped?.fundStore) setFundStore(mapped.fundStore);
-        if (Array.isArray(mapped?.interpretiveList) && mapped.interpretiveList.length > 0) {
-          setInterpretiveList(mapped.interpretiveList);
-        }
-        if (Array.isArray(mapped?.disclosuresList)) {
-          setLiveDisclosures(mapped.disclosuresList);
-        }
-        if (Array.isArray(mapped?.codalAnnouncements)) {
-          setCodalList(mapped.codalAnnouncements);
-        }
-        setCodalStatus({
-          type: 'success',
-          text: `دیتابیس آفلاین ${tickerName} بارگذاری شد (${rawArchive.meta?.counts?.monthly_sales || 0} ماهانه | ${rawArchive.meta?.counts?.financial_statements || 0} صورت مالی | ${rawArchive.meta?.counts?.interpretive_reports || 0} PDF تفسیری)`,
-        });
-      })
-      .catch((err) => {
-        setCodalStatus({
-          type: 'error',
-          text: `خطا در بارگذاری آرشیو ${tickerName} (${err.message})`,
-        });
-      });
-  }, [selectedSymbol]);
+  const normalizedQuery = normalizeMarketSearch(symbolSearchQuery);
+  const filteredSymbolsList = profiles.filter(profile =>
+    (selectedIndustryFilter === 'همه گروه‌های صنعتی' || profile.tseIndustryGroup === selectedIndustryFilter)
+    && (!normalizedQuery || profile.searchKey.includes(normalizedQuery)));
 
   useEffect(() => { setCodalPage(1); }, [codalSearch, codalYearFilter]);
 
-  const handleRestoreJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleRestoreJSON = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      try {
-        const parsed = JSON.parse(String(evt.target?.result || '{}'));
-        if (parsed.liveMarketData?.pc) {
-          setLiveData(parsed.liveMarketData);
-          localStorage.setItem(TSE_CACHE_KEY, JSON.stringify(parsed.liveMarketData));
-        }
-        if (Array.isArray(parsed.codalAnnouncements)) {
-          const cleaned = parsed.codalAnnouncements.filter((i: any) => isAllowedCodalAnnouncement(i.title));
-          setCodalList(cleaned);
-          localStorage.setItem(CODAL_CACHE_KEY, JSON.stringify(cleaned));
-        }
-        if (Array.isArray(parsed.interpretiveSummaries)) {
-          setInterpretiveList(parsed.interpretiveSummaries);
-          localStorage.setItem(INTERPRETIVE_NOTES_KEY, JSON.stringify(parsed.interpretiveSummaries));
-        }
-        if (parsed.fundamentalData?.annualIncomeData) {
-          setFundStore(parsed.fundamentalData);
-          localStorage.setItem(FUNDAMENTAL_DYNAMIC_KEY, JSON.stringify(parsed.fundamentalData));
-        }
-        setCodalStatus({ type: 'success', text: 'فایل پشتیبان JSON بازیابی شد.' });
-      } catch {
-        alert('خطا در خواندن فایل JSON');
+    try {
+      const payload: unknown = JSON.parse(await file.text());
+      if (!mounted.current) return;
+      const writes = prepareMarketRestore(payload, instruments.map(item => item.issuerId), instrument.issuerId);
+      if (writes.size === 0) {
+        setCodalStatus({ type: 'info', text: 'یادداشت یا ویرایشی در فایل پشتیبان وجود ندارد.' });
+        return;
       }
-    };
-    reader.readAsText(file);
-    e.target.value = '';
+      const overwrite = [...writes].some(([key, value]) => {
+        const stored = localStorage.getItem(key);
+        return stored !== null && stored !== value;
+      });
+      if (overwrite && !window.confirm('یادداشت‌ها یا ویرایش‌های موجود برای ناشران این فایل جایگزین شوند؟')) return;
+      restoreMarketBackup(writes);
+      onRestore();
+      alert('یادداشت‌ها و ویرایش‌های فایل پشتیبان بازیابی شدند.');
+    } catch (error) {
+      if (mounted.current) setCodalStatus({ type: 'error', text: error instanceof Error ? error.message : 'بازیابی فایل پشتیبان ناموفق بود.' });
+    }
   };
 
   const handleExcelFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
+    let parseCodalExcelBuffer: typeof import('./utils/excelParser').parseCodalExcelBuffer;
+    try {
+      ({ parseCodalExcelBuffer } = await import('./utils/excelParser'));
+    } catch {
+      if (mounted.current) setCodalStatus({ type: 'error', text: 'بارگذاری ابزار خواندن اکسل ناموفق بود.' });
+      return;
+    }
+    if (!mounted.current) return;
 
     if (files.length === 1) {
       const file = files[0];
       const reader = new FileReader();
       reader.onload = (evt) => {
+      if (!mounted.current) return;
         try {
           const buffer = evt.target?.result as ArrayBuffer;
           const parsed = parseCodalExcelBuffer(buffer, file.name, fundStore);
@@ -384,6 +256,7 @@ export default function App() {
     for (const file of files) {
       try {
         const buffer = await file.arrayBuffer();
+      if (!mounted.current) return;
         const parsed = parseCodalExcelBuffer(buffer, file.name, fundStore);
         if (parsed.reportType === 'monthly_n30' && parsed.targetMonth && parsed.monthlySales && parsed.monthlySales > 0) {
           batchUpdates[parsed.targetMonth] = parsed.monthlySales;
@@ -435,13 +308,11 @@ export default function App() {
     }
 
     const { revenue, adminCost, opProfit, netProfit, ocf, equity, liabilities, assets, fileName } = excelParsePreview;
-    const calcOpMargin = revenue > 0 ? Math.round((opProfit / revenue) * 100) : 75;
-    const calcNetMargin = revenue > 0 ? Math.round((netProfit / revenue) * 100) : 103;
-    const calcROE = equity > 0 ? Number(((netProfit / equity) * 100).toFixed(1)) : 62.6;
-    const calcROA = assets > 0 ? Number(((netProfit / assets) * 100).toFixed(1)) : 41.3;
-    const calcEfficiency = revenue > 0 ? Number(((adminCost / revenue) * 100).toFixed(1)) : 24.6;
-    const calcEquityRatio = assets > 0 ? Number(((equity / assets) * 100).toFixed(1)) : 82.7;
-    const calcDebtRatio = assets > 0 ? Number(((liabilities / assets) * 100).toFixed(1)) : 17.1;
+    const ratios = calculateRatios({
+      revenue, operating_profit: opProfit, net_profit: netProfit, total_equity: equity,
+      total_assets: assets, total_liabilities: liabilities, operating_cash_flow: ocf
+    }, {}, activeConfig.tseIndustryGroup);
+    const { opMargin: calcOpMargin, netMargin: calcNetMargin, roe: calcROE, efficiency: calcEfficiency } = ratios;
 
     const updatedStore = {
       ...fundStore,
@@ -456,11 +327,7 @@ export default function App() {
       balanceSheetData: fundStore.balanceSheetData.map((r: any) => (r.year === '۱۴۰۴' ? { ...r, liabilities, equity } : r)),
       interimReport: { ...fundStore.interimReport, revenue, adminCost, opProfit, opMargin: calcOpMargin, netProfit, netMargin: calcNetMargin },
       ratiosDef: fundStore.ratiosDef.map((r: any) => {
-        if (r.id === 'roe') return { ...r, current: calcROE };
-        if (r.id === 'roa') return { ...r, current: calcROA };
-        if (r.id === 'efficiency') return { ...r, current: calcEfficiency };
-        if (r.id === 'equity') return { ...r, current: calcEquityRatio };
-        if (r.id === 'debt') return { ...r, current: calcDebtRatio };
+        if (r.id in ratios) return { ...r, current: ratios[r.id as keyof typeof ratios] };
         return r;
       })
     };
@@ -470,62 +337,9 @@ export default function App() {
   };
 
   const handleResetFundamentalStore = () => {
-    setFundStore(activeConfig.defaultFundamental);
+    setFundStore(view.fundStore);
     localStorage.removeItem(FUNDAMENTAL_DYNAMIC_KEY);
     setExcelParsePreview(null);
-  };
-
-  const handleRefreshTSE = async () => {
-    setTseLoading(true);
-    setTseStatus({ type: 'loading', text: `در حال دریافت تابلو ${activeConfig.ticker} (${activeConfig.fullName})...` });
-    try {
-      const response = await fetch(TSE_API_URL);
-      const data = await response.json();
-      if (data && data.pc) {
-        setLiveData(data);
-        localStorage.setItem(TSE_CACHE_KEY, JSON.stringify(data));
-        if (data.l30 || data.cs_sub) {
-          setSymbolsRegistry((prev) => ({
-            ...prev,
-            [selectedSymbol]: {
-              ...prev[selectedSymbol],
-              fullName: data.l30 || prev[selectedSymbol].fullName,
-              tseIndustryGroup: data.cs_sub || prev[selectedSymbol].tseIndustryGroup
-            }
-          }));
-        }
-        setTseStatus({ type: 'success', text: `تابلو ${activeConfig.ticker} (${data.l30 || activeConfig.fullName}) آپدیت شد (${data.date_update})` });
-      }
-    } catch (err: any) {
-      setTseStatus({ type: 'error', text: `خطا: ${err.message}` });
-    } finally {
-      setTseLoading(false);
-    }
-  };
-
-  const handleSyncCodal = async () => {
-    setCodalLoading(true);
-    setCodalStatus({ type: 'loading', text: `در حال دریافت هوشمند گزارش‌های کدال ${activeConfig.ticker} (${activeConfig.fullName})...` });
-    try {
-      const result = await fetchOptimizedCodalData(activeConfig.apiL18, '1403-01-01');
-      if (result.announcements.length > 0) {
-        setCodalList(result.announcements);
-        localStorage.setItem(CODAL_CACHE_KEY, JSON.stringify(result.announcements));
-        setCodalPage(1);
-      }
-      if (result.disclosures.length > 0) {
-        setLiveDisclosures(result.disclosures);
-      }
-      setCodalQuickLinks(result);
-      setCodalStatus({
-        type: 'success',
-        text: `${result.announcements.length} گزارش کدال و ${result.monthlyExcelLinks.length} لینک اکسل ماهانه دریافت شد (مصرف: ${result.requestsUsed} درخواست).`
-      });
-    } catch (err: any) {
-      setCodalStatus({ type: 'error', text: `خطا: ${err.message}` });
-    } finally {
-      setCodalLoading(false);
-    }
   };
 
   const handleAddInterpretiveHighlight = () => {
@@ -537,21 +351,11 @@ export default function App() {
   };
 
   const liveMetrics = useMemo(() => {
-    const marketCapToman = (liveData.mv || 0) / 10 / 1e9;
-    const marketCapUSD = (marketCapToman * 1e9) / (fx1405 || 1) / 1e6;
-    const latestEquity = fundStore.balanceSheetData[fundStore.balanceSheetData.length - 1]?.equity || 1;
-    const livePB = latestEquity > 0 ? marketCapToman / latestEquity : 0;
-    const valueTradedToman = (liveData.tval || 0) / 10 / 1e9;
-
-    const sharesCount = Number(liveData.z || 0);
-    const registeredCapitalTomanBillion = (sharesCount * 100) / 1e9;
-    const registeredCapitalHemmat = registeredCapitalTomanBillion / 1000;
-
-    return {
-      marketCapToman, marketCapUSD, livePB, valueTradedToman,
-      registeredCapitalTomanBillion, registeredCapitalHemmat
-    };
-  }, [liveData, fx1405, fundStore]);
+    const marketCapToman = liveData.mv === null ? null : liveData.mv / 10 / 1e9;
+    const marketCapUSD = marketCapToman === null ? null : marketCapToman * 1e3 / fx1405;
+    return { marketCapToman, marketCapUSD, livePB: liveData.pb,
+      registeredCapitalTomanBillion: null, registeredCapitalHemmat: null };
+  }, [liveData, fx1405]);
 
   const valuationResults = useMemo(() => {
     const shares = Math.max(valInputs.sharesCountBillion, 0.1);
@@ -587,15 +391,14 @@ export default function App() {
     const priceRelPB = valInputs.bookValuePerShare * valInputs.targetPB;
 
     const avgIntrinsicPrice = (priceFcff + priceFcfe + priceDdm + priceRelPE + priceRelPB) / 5;
-    const currentPrice = liveData.pc || 13450;
-    const upsidePercent = currentPrice > 0 ? ((avgIntrinsicPrice - currentPrice) / currentPrice) * 100 : 0;
+    const currentPrice = liveData.pc;
+    const upsidePercent = currentPrice !== null && currentPrice > 0 ? ((avgIntrinsicPrice - currentPrice) / currentPrice) * 100 : null;
 
     return { priceFcff, priceFcfe, priceDdm, priceRelPE, priceRelPB, avgIntrinsicPrice, upsidePercent };
   }, [valInputs, liveData.pc]);
 
   const filteredCodalList = useMemo(() => {
     return codalList.filter((item) => {
-      if (!isAllowedCodalAnnouncement(item.title)) return false;
       const tNorm = normalizeDigits(String(item.title || ''));
       const dTitle = normalizeDigits(String(item.date_title || ''));
       const dPub = normalizeDigits(String(item.date_publish || ''));
@@ -621,22 +424,14 @@ export default function App() {
   }, [liveDisclosures, disclosureGroupFilter]);
 
   const handleExportJSON = () => {
-    const payload = {
-      exportedAt: new Date().toISOString(),
-      symbol: `${activeConfig.ticker} (${activeConfig.fullName})`,
-      tseIndustryGroup: activeConfig.tseIndustryGroup,
-      liveMarketData: liveData,
-      codalAnnouncements: codalList,
-      interpretiveSummaries: interpretiveList,
-      fundamentalData: fundStore
-    };
+    const payload = createMarketBackup(instruments.map(item => item.issuerId));
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${selectedSymbol.toUpperCase()}_Archive.json`;
+    a.download = `market-dashboard-backup-${payload.exportedAt.slice(0, 10)}.json`;
     a.click();
-    URL.revokeObjectURL(url);
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   const getHistoricalUsdRate = (year: string, currentRate: number) => {
@@ -648,10 +443,10 @@ export default function App() {
     const rate = getHistoricalUsdRate(item.year, customUsdRate);
     return {
       ...item,
-      usdValue: Number(((item.value * 1000) / rate).toFixed(1)),
-      usdNetProfit: Number(((item.netProfit * 1000) / rate).toFixed(1)),
-      compUsdValue: Number(((item.compValue * 1000) / rate).toFixed(1)),
-      compUsdNetProfit: Number(((item.compNetProfit * 1000) / rate).toFixed(1)),
+      usdValue: item.value == null ? null : Number(((item.value * 1000) / rate).toFixed(1)),
+      usdNetProfit: item.netProfit == null ? null : Number(((item.netProfit * 1000) / rate).toFixed(1)),
+      compUsdValue: item.compValue == null ? null : Number(((item.compValue * 1000) / rate).toFixed(1)),
+      compUsdNetProfit: item.compNetProfit == null ? null : Number(((item.compNetProfit * 1000) / rate).toFixed(1)),
     };
   });
 
@@ -666,7 +461,7 @@ export default function App() {
   const chartTabs = [
     { id: 'annual_income', label: 'فروش و سود خالص', icon: DollarSign },
     { id: 'monthly_income', label: 'درآمد ماهانه', icon: BarChartIcon },
-    { id: 'income_breakdown', label: 'درآمد تفکیکی', icon: Layers },
+    { id: 'income_breakdown', label: 'ساختار سود و زیان', icon: Layers },
     { id: 'cash_flow', label: 'جریان نقد عملیاتی', icon: Activity },
     { id: 'balance_sheet', label: 'ترازنامه', icon: Building2 },
     { id: 'pb_ratio', label: 'P/B', icon: Activity },
@@ -703,7 +498,8 @@ export default function App() {
   const borderSubtle = darkMode ? 'border-slate-800' : 'border-slate-200';
 
   return (
-    <div dir="rtl" className={`min-h-screen flex transition-colors duration-200 font-sans ${bgPage}`}>
+    <div dir="rtl" data-theme={theme} className={`min-h-screen flex transition-colors duration-200 font-sans ${bgPage}`}>
+      <svg width="0" height="0" aria-hidden="true" className="absolute"><ChartGradients /></svg>
       <input ref={fileInputRef} type="file" accept=".xlsx,.xls" multiple onChange={handleExcelFileUpload} className="hidden" />
       <input ref={jsonRestoreInputRef} type="file" accept=".json" onChange={handleRestoreJSON} className="hidden" />
 
@@ -731,7 +527,7 @@ export default function App() {
 
           <div className={`p-4 border-b space-y-2.5 ${borderSubtle}`}>
             <div className="flex items-center justify-between">
-              <p className={`text-[11px] font-bold ${textMuted}`}>جستجوی نماد / شرکت ({Object.keys(symbolsRegistry).length} نماد):</p>
+              <p className={`text-[11px] font-bold ${textMuted}`}>جستجوی نماد / شرکت ({instruments.length} نماد):</p>
               <Factory className="w-3.5 h-3.5 text-amber-500" />
             </div>
 
@@ -741,12 +537,7 @@ export default function App() {
                 type="text"
                 value={symbolSearchQuery}
                 onChange={(e) => setSymbolSearchQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && symbolSearchQuery.trim()) {
-                    handleAddAndSelectCustomSymbol(symbolSearchQuery.trim());
-                  }
-                }}
-                placeholder="جستجو یا تایپ نماد جدید (مثلاً فولاد)..."
+                placeholder="جستجوی نماد یا شرکت (مثلاً فولاد)…"
                 className={`w-full pr-8 pl-2.5 py-2 rounded-xl border text-xs focus:outline-none focus:ring-1 focus:ring-amber-500 ${subCardStyle}`}
               />
             </div>
@@ -756,7 +547,7 @@ export default function App() {
               onChange={(e) => setSelectedIndustryFilter(e.target.value)}
               className={`w-full px-2.5 py-1.5 rounded-xl border text-[11px] font-medium outline-none cursor-pointer ${subCardStyle}`}
             >
-              {TSE_INDUSTRY_GROUPS.map((grp) => (
+              {['همه گروه‌های صنعتی', ...sectors.map(sector => sector.nameFa)].map((grp) => (
                 <option key={grp} value={grp} className={darkMode ? 'bg-slate-900' : 'bg-white'}>
                   {grp === 'همه گروه‌های صنعتی' ? 'صنعت TSE: همه صنایع' : grp}
                 </option>
@@ -769,7 +560,7 @@ export default function App() {
                 return (
                   <button
                     key={sym.key}
-                    onClick={() => setSelectedSymbol(sym.key)}
+                    onClick={() => selectInstrument(sym.key)}
                     className={`w-full text-right py-2 px-3 rounded-xl text-xs font-bold border transition cursor-pointer flex flex-col gap-0.5 ${
                       isSelected
                         ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
@@ -786,15 +577,7 @@ export default function App() {
                 );
               })}
 
-              {symbolSearchQuery.trim() && filteredSymbolsList.length === 0 && (
-                <button
-                  onClick={() => handleAddAndSelectCustomSymbol(symbolSearchQuery.trim())}
-                  className="w-full py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <PlusCircle className="w-3.5 h-3.5" />
-                  <span>بارگذاری «{symbolSearchQuery.trim()}» از TSE</span>
-                </button>
-              )}
+              {filteredSymbolsList.length === 0 && <p className="text-xs">نمادی پیدا نشد.</p>}
             </div>
           </div>
 
@@ -806,13 +589,17 @@ export default function App() {
               { id: 'disclosures', label: 'اطلاعات افشا شده شرکت', icon: BellRing },
               { id: 'valuation', label: 'ارزش‌گذاری جامع سهم', icon: Scale },
               { id: 'forecast', label: 'پیش‌بینی فروش و EPS', icon: Calculator },
+              { id: 'fixtures', label: 'پیش‌نمایش داده آزمایشی', icon: Database }
             ].map((navItem) => {
               const Icon = navItem.icon;
               const active = mainPage === navItem.id;
               return (
                 <button
                   key={navItem.id}
-                  onClick={() => { setMainPage(navItem.id as any); setMobileMenuOpen(false); }}
+                  onClick={() => {
+                    setMainPage(navItem.id as DashboardPage);
+                    setMobileMenuOpen(false);
+                  }}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs md:text-sm font-semibold transition-all cursor-pointer ${
                     active ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20' : `${textMuted} hover:bg-slate-800/40`
                   }`}
@@ -838,17 +625,14 @@ export default function App() {
               </div>
               <div className="flex items-center justify-between">
                 <span className={`text-xs ${textMuted}`}>P/E (TTM):</span>
-                <span className="text-xs font-bold text-amber-500" dir="ltr">{liveData.pe}</span>
+                <span className="text-xs font-bold text-amber-500" dir="ltr">{formatNum(liveData.pe, 2)}</span>
               </div>
             </div>
           </div>
         </div>
 
         <div className={`p-4 border-t space-y-2 ${borderSubtle}`}>
-          <button onClick={() => setDarkMode(!darkMode)} className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl border text-xs font-semibold cursor-pointer ${subCardStyle}`}>
-            <span>{darkMode ? 'حالت تاریک' : 'حالت روشن'}</span>
-            {darkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
-          </button>
+          <label className="flex justify-between items-center p-3">پوسته<select className="bg-transparent" value={theme} onChange={e => setTheme(e.target.value)}><option value="dark">تیره</option><option value="light">روشن</option><option value="emerald">زمردی</option></select></label>
           <div className="grid grid-cols-2 gap-2">
             <button onClick={handleExportJSON} className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border text-xs font-semibold cursor-pointer ${borderSubtle}`}>
               <Download className="w-4 h-4 text-emerald-500" /><span>بکاپ JSON</span>
@@ -877,23 +661,11 @@ export default function App() {
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
-              {mainPage === 'fundamental' && (
-                <div className={`hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-lg border ${subCardStyle}`}>
-                  <GitCompare className="w-4 h-4 text-indigo-500" />
-                  <select className="bg-transparent text-xs font-medium outline-none cursor-pointer" value={compareStock} onChange={(e) => setCompareStock(e.target.value)}>
-                    <option value="none" className={darkMode ? 'bg-slate-900' : 'bg-white'}>بدون مقایسه</option>
-                    <option value="bourse" className={darkMode ? 'bg-slate-900' : 'bg-white'}>مقایسه با صنعت</option>
-                  </select>
-                </div>
-              )}
               <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium cursor-pointer" title="انتخاب همزمان یک یا چند فایل اکسل">
                 <Upload className="w-3.5 h-3.5" /><span className="hidden md:inline">آپلود اکسل (تکی/گروهی)</span>
               </button>
-              <button onClick={handleRefreshTSE} disabled={tseLoading} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium cursor-pointer">
-                <RefreshCw className={`w-3.5 h-3.5 ${tseLoading ? 'animate-spin' : ''}`} /><span className="hidden sm:inline">به‌روزرسانی تابلو</span>
-              </button>
-              <button onClick={handleSyncCodal} disabled={codalLoading} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold cursor-pointer">
-                <Database className={`w-3.5 h-3.5 ${codalLoading ? 'animate-spin' : ''}`} /><span className="hidden sm:inline">همگام‌سازی کدال (۳ درخواست)</span>
+              <button onClick={refresh} className="rounded-xl border px-3 py-2 text-xs">
+                <RefreshCw className="inline w-4 h-4" /> بررسی نسخه داده
               </button>
             </div>
           </div>
@@ -903,8 +675,8 @@ export default function App() {
         <div className="max-w-7xl w-full mx-auto px-4 md:px-6 mt-4">
           <div className={`px-4 py-2 rounded-xl border text-xs flex flex-wrap items-center justify-between gap-2 ${cardStyle}`}>
             <div className="flex flex-wrap items-center gap-4">
-              <span>• {tseStatus.text}</span>
-              <span>• {codalStatus.text}</span>
+              <span>• {instrument.coverageState === 'full' ? 'پوشش کامل' : instrument.coverageState === 'partial' ? 'پوشش جزئی' : 'فقط فهرست'}</span>
+              <span>• {localStatus?.text ?? status}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <span>دلار مبنا:</span>
@@ -912,64 +684,6 @@ export default function App() {
             </div>
           </div>
         </div>
-
-        {/* DIRECT EXCEL LINKS PANEL FROM CODAL API (CATEGORY 3 & CATEGORY 1) */}
-        {codalQuickLinks && (codalQuickLinks.monthlyExcelLinks.length > 0 || codalQuickLinks.financialExcelLinks.length > 0) && (
-          <div className="max-w-7xl w-full mx-auto px-4 md:px-6 mt-3">
-            <div className={`p-4 rounded-2xl border border-purple-500/40 text-xs space-y-3 ${cardStyle}`}>
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-purple-400 flex items-center gap-1.5">
-                  <FileSpreadsheet className="w-4 h-4" />
-                  فایل‌های اکسل آماده دریافت‌شده از کدال برای {activeConfig.ticker} ({activeConfig.fullName}):
-                </span>
-                <button onClick={() => setCodalQuickLinks(null)} className="text-slate-400 hover:text-white cursor-pointer">بستن</button>
-              </div>
-
-              {codalQuickLinks.monthlyExcelLinks.length > 0 && (
-                <div>
-                  <span className={`block mb-1.5 font-semibold ${textMuted}`}>
-                    ۱. گزارش‌های فعالیت ماهانه (category=3) — کلیک کنید تا دانلود شوند، سپس همزمان با دکمه «آپلود اکسل» انتخاب کنید:
-                  </span>
-                  <div className="flex flex-wrap gap-2">
-                    {codalQuickLinks.monthlyExcelLinks.map((lnk, i) => (
-                      <a
-                        key={i}
-                        href={lnk.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="px-2.5 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-400 font-bold"
-                      >
-                        اکسل {lnk.month} {toPersianDigits(lnk.year)}
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {codalQuickLinks.financialExcelLinks.length > 0 && (
-                <div>
-                  <span className={`block mb-1.5 font-semibold ${textMuted}`}>
-                    ۲. صورت‌های مالی میاندوره‌ای و سالانه (category=1):
-                  </span>
-                  <div className="flex flex-wrap gap-2">
-                    {codalQuickLinks.financialExcelLinks.map((lnk, i) => (
-                      <a
-                        key={i}
-                        href={lnk.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        title={lnk.title}
-                        className="px-2.5 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 font-bold"
-                      >
-                        صورت مالی ({lnk.period})
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* EXCEL PARSE PREVIEW BANNER */}
         {excelParsePreview && (
@@ -1081,16 +795,18 @@ export default function App() {
         )}
 
         {/* TAB 1: OVERVIEW */}
+        {mainPage === 'fixtures' && <div className={`p-6 ${cardStyle}`}><Suspense fallback={<p role="status">در حال بارگذاری پیش‌نمایش…</p>}><MarketFixtures key={release.manifest.releaseId} manifest={release.manifest} /></Suspense></div>}
         {mainPage === 'overview' && (
           <ErrorBoundary sectionName="معرفی شرکت و اطلاعات پایه">
             <main className="max-w-7xl w-full mx-auto px-4 md:px-6 mt-6 space-y-6 pb-12">
+              <CompanyHeader key={activeConfig.ticker} ticker={activeConfig.ticker} name={activeConfig.fullName} industry={activeConfig.tseIndustryGroup} price={liveData.pc} imageUrl={instrument.image ? marketRepository.resolveAssetUrl(instrument.image) : undefined} />
               <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className={`rounded-2xl p-5 border relative overflow-hidden ${cardStyle}`}>
                   <div className="absolute top-0 right-0 w-1 h-full bg-emerald-500"></div>
                   <span className={`text-xs ${textMuted}`}>قیمت پایانی سهم (ریال)</span>
                   <div className="flex items-baseline justify-between mt-2">
                     <span className={`text-2xl font-bold ${textHeading}`} dir="ltr">{formatNum(liveData.pc)}</span>
-                    <span className="text-xs font-bold text-emerald-400" dir="ltr">{liveData.pcp}%</span>
+                    <span className="text-xs font-bold text-emerald-400" dir="ltr">{liveData.pcp ?? "—"}</span>
                   </div>
                   <p className={`text-xs mt-2 ${textMuted}`}>بازه سال: {formatNum(liveData.pmin_1y)} - {formatNum(liveData.pmax_1y)}</p>
                 </div>
@@ -1131,58 +847,11 @@ export default function App() {
                     </span>
                   </div>
                   <p className={`text-xs mt-2 ${textMuted}`}>
-                    تعداد سهام: {formatNum((liveData.z || 0) / 1e9, 2)} میلیارد سهم (اسمی ۱۰۰ تومان)
+                    تعداد سهام: {formatNum(liveData.z == null ? null : liveData.z / 1e9, 2)} میلیارد سهم (اسمی ۱۰۰ تومان)
                   </p>
                 </div>
               </section>
 
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className={`rounded-2xl border p-6 lg:col-span-2 ${cardStyle}`}>
-                  <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-                    <h2 className={`text-base md:text-lg font-bold ${textHeading}`}>
-                      معرفی و هسته کسب‌وکار {activeConfig.ticker} ({activeConfig.fullName})
-                    </h2>
-                    <span className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-500/15 text-amber-500">{activeConfig.monopolyBadge}</span>
-                  </div>
-                  <p className={`text-xs md:text-sm leading-relaxed mb-5 ${textMuted}`}>{activeConfig.description}</p>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {activeConfig.pillars.map((p, idx) => (
-                      <div key={idx} className={`p-4 rounded-xl border ${subCardStyle}`}>
-                        <span className={`text-xs font-bold block mb-1.5 ${p.color}`}>{p.title}</span>
-                        <p className={`text-xs leading-relaxed ${textMuted}`}>{p.desc}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className={`rounded-2xl border p-6 ${cardStyle}`}>
-                  <h2 className={`text-base font-bold flex items-center gap-2 mb-4 ${textHeading}`}>
-                    <Users className="w-5 h-5 text-blue-500" />
-                    ترکیب سهامداران {activeConfig.ticker}
-                  </h2>
-                  <div className="h-44 w-full" dir="ltr">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <RechartsPieChart>
-                        <Pie data={activeConfig.shareholders} dataKey="percent" nameKey="name" cx="50%" cy="50%" innerRadius={42} outerRadius={68} paddingAngle={3}>
-                          {activeConfig.shareholders.map((e, i) => <Cell key={i} fill={e.color} />)}
-                        </Pie>
-                        <Tooltip />
-                      </RechartsPieChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <div className="space-y-2 mt-2">
-                    {activeConfig.shareholders.map((sh, i) => (
-                      <div key={i} className="flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: sh.color }}></span>
-                          <span className={textMuted}>{sh.name}</span>
-                        </div>
-                        <span className="font-bold" dir="ltr">{sh.percent}٪</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
             </main>
           </ErrorBoundary>
         )}
@@ -1206,6 +875,14 @@ export default function App() {
                 <section className={`rounded-2xl border p-6 xl:col-span-2 ${cardStyle}`}>
                   <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                     <h2 className={`text-lg font-bold ${textHeading}`}>نمودارهای بنیادی ({activeConfig.ticker})</h2>
+                    {view.scopeLabel && <p className="text-xs">صورت‌های سالانه ۱۲ماهه · {view.scopeLabel}</p>}
+                    {view.revisionHistory.length > 0 && <details className="text-xs border rounded p-2">
+                      <summary className="cursor-pointer">تاریخچه اصلاحیه‌ها</summary>
+                      {view.revisionHistory.map(row => <p key={row.revisionId} dir="auto">
+                        {row.isFixture && 'داده آزمایشی (Test Fixture) · '}{row.periodEndJalali ?? row.fiscalYear}
+                        {' · '}{row.revisionId}{row.restatedFromRevisionId && ' ← ' + row.restatedFromRevisionId}
+                      </p>)}
+                    </details>}
                     <div className="flex gap-1.5 overflow-x-auto pb-1">
                       {chartTabs.map((t) => (
                         <button key={t.id} onClick={() => setActiveTab(t.id)} className={`px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer whitespace-nowrap ${activeTab === t.id ? 'bg-amber-500 text-white' : subCardStyle}`}>
@@ -1218,30 +895,97 @@ export default function App() {
                     <ResponsiveContainer width="100%" height="100%">
                       {activeTab === 'annual_income' ? (
                         <ComposedChart data={dynamicAnnualIncomeData}>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridStroke} />
+                          <CartesianGrid strokeDasharray="2 5" vertical={false} stroke={gridStroke} />
                           <XAxis dataKey="year" tick={{ fill: axisTickColor }} />
-                          <YAxis tick={{ fill: axisTickColor }} />
+                          <YAxis tickFormatter={compactNumber} tick={{ fill: axisTickColor }} />
                           <Tooltip content={<CustomTooltip unit={valUnit} darkMode={darkMode} />} />
-                          <Bar dataKey={currency === 'IRT' ? 'value' : 'usdValue'} name="درآمد عملیاتی" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={45} />
+                          <Bar dataKey={currency === 'IRT' ? 'value' : 'usdValue'} name="درآمد عملیاتی" fill="url(#series-f59e0b)" radius={[4, 4, 0, 0]} maxBarSize={45} />
                           <Line type="monotone" dataKey={currency === 'IRT' ? 'netProfit' : 'usdNetProfit'} name="سود خالص" stroke="#10b981" strokeWidth={3} />
                         </ComposedChart>
                       ) : activeTab === 'monthly_income' ? (
                         <BarChart data={fundStore.incomeData}>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridStroke} />
+                          <CartesianGrid strokeDasharray="2 5" vertical={false} stroke={gridStroke} />
                           <XAxis dataKey="month" tick={{ fill: axisTickColor }} />
-                          <YAxis tick={{ fill: axisTickColor }} />
+                          <YAxis tickFormatter={compactNumber} tick={{ fill: axisTickColor }} />
                           <Tooltip content={<CustomTooltip unit="میلیارد تومان" darkMode={darkMode} />} />
                           {avg1404Monthly > 0 && <ReferenceLine y={avg1404Monthly} stroke="#10b981" strokeDasharray="5 5" />}
-                          <Bar dataKey="year1404" name="۱۴۰۴" fill="#10b981" maxBarSize={35} />
-                          <Bar dataKey="year1405" name="۱۴۰۵" fill="#f59e0b" maxBarSize={35} />
+                          <Bar dataKey="year1403" name="۱۴۰۳" fill="url(#series-6366f1)" radius={[4, 4, 0, 0]} maxBarSize={28} />
+                          <Bar dataKey="year1404" name="۱۴۰۴" fill="url(#series-10b981)" radius={[4, 4, 0, 0]} maxBarSize={28} />
+                          <Bar dataKey="year1405" name="۱۴۰۵" fill="url(#series-f59e0b)" radius={[4, 4, 0, 0]} maxBarSize={28} />
                         </BarChart>
-                      ) : (
-                        <LineChart data={activeTab === 'roe' ? fundStore.roeData : activeTab === 'pb_ratio' ? fundStore.pbData : fundStore.netMarginData}>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridStroke} />
+                      ) : activeTab === 'income_breakdown' ? (
+                        <BarChart
+                          data={fundStore.annualIncomeData.map((item: any) => ({
+                            year: item.year, revenue: item.value, cost: item.cost ?? null,
+                            opProfit: item.opProfit ?? null, netProfit: item.netProfit,
+                          }))}
+                        >
+                          <CartesianGrid strokeDasharray="2 5" vertical={false} stroke={gridStroke} />
                           <XAxis dataKey="year" tick={{ fill: axisTickColor }} />
-                          <YAxis tick={{ fill: axisTickColor }} />
+                          <YAxis tickFormatter={compactNumber} tick={{ fill: axisTickColor }} />
+                          <Tooltip content={<CustomTooltip unit="میلیارد تومان" darkMode={darkMode} />} />
+                          <Bar dataKey="revenue" name="درآمد عملیاتی" fill="url(#series-f59e0b)" radius={[4, 4, 0, 0]} maxBarSize={26} />
+                          <Bar dataKey="cost" name="بهای تمام‌شده / هزینه" fill="url(#series-ef4444)" radius={[4, 4, 0, 0]} maxBarSize={26} />
+                          <Bar dataKey="opProfit" name="سود عملیاتی" fill="url(#series-3b82f6)" radius={[4, 4, 0, 0]} maxBarSize={26} />
+                          <Bar dataKey="netProfit" name="سود خالص" fill="url(#series-10b981)" radius={[4, 4, 0, 0]} maxBarSize={26} />
+                        </BarChart>
+                      ) : activeTab === 'cash_flow' ? (
+                        <BarChart data={fundStore.cashFlowData}>
+                          <CartesianGrid strokeDasharray="2 5" vertical={false} stroke={gridStroke} />
+                          <XAxis dataKey="year" tick={{ fill: axisTickColor }} />
+                          <YAxis tickFormatter={compactNumber} tick={{ fill: axisTickColor }} />
+                          <Tooltip content={<CustomTooltip unit="میلیارد تومان" darkMode={darkMode} />} />
+                          <ReferenceLine y={0} stroke={axisTickColor} />
+                          <Bar dataKey="value" name="جریان نقد عملیاتی (OCF)" fill="url(#series-06b6d4)" radius={[4, 4, 0, 0]} maxBarSize={45} />
+                        </BarChart>
+                      ) : activeTab === 'balance_sheet' ? (
+                        <BarChart data={fundStore.balanceSheetData}>
+                          <CartesianGrid strokeDasharray="2 5" vertical={false} stroke={gridStroke} />
+                          <XAxis dataKey="year" tick={{ fill: axisTickColor }} />
+                          <YAxis tickFormatter={compactNumber} tick={{ fill: axisTickColor }} />
+                          <Tooltip content={<CustomTooltip unit="میلیارد تومان" darkMode={darkMode} />} />
+                          <Bar dataKey="equity" name="حقوق مالکانه" fill="url(#series-10b981)" radius={[4, 4, 0, 0]} maxBarSize={38} />
+                          <Bar dataKey="liabilities" name="کل بدهی‌ها" fill="url(#series-f43f5e)" radius={[4, 4, 0, 0]} maxBarSize={38} />
+                        </BarChart>
+                      ) : activeTab === 'pb_ratio' ? (
+                        <LineChart data={fundStore.pbData}>
+                          <CartesianGrid strokeDasharray="2 5" vertical={false} stroke={gridStroke} />
+                          <XAxis dataKey="year" tick={{ fill: axisTickColor }} />
+                          <YAxis tickFormatter={compactNumber} tick={{ fill: axisTickColor }} />
+                          <Tooltip content={<CustomTooltip unit=" مرتبه" darkMode={darkMode} />} />
+                          <Line type="monotone" dataKey="value" name="نسبت P/B" stroke="#8b5cf6" strokeWidth={3} dot={{ r: 4 }} />
+                        </LineChart>
+                      ) : activeTab === 'op_margin' ? (
+                        <LineChart data={fundStore.opMarginData}>
+                          <CartesianGrid strokeDasharray="2 5" vertical={false} stroke={gridStroke} />
+                          <XAxis dataKey="year" tick={{ fill: axisTickColor }} />
+                          <YAxis tickFormatter={compactNumber} tick={{ fill: axisTickColor }} />
                           <Tooltip content={<CustomTooltip unit="٪" darkMode={darkMode} />} />
-                          <Line type="monotone" dataKey="value" name="مقدار" stroke="#10b981" strokeWidth={3} />
+                          <Line type="monotone" dataKey="value" name="حاشیه سود عملیاتی" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4 }} />
+                        </LineChart>
+                      ) : activeTab === 'roe' ? (
+                        <LineChart data={fundStore.roeData}>
+                          <CartesianGrid strokeDasharray="2 5" vertical={false} stroke={gridStroke} />
+                          <XAxis dataKey="year" tick={{ fill: axisTickColor }} />
+                          <YAxis tickFormatter={compactNumber} tick={{ fill: axisTickColor }} />
+                          <Tooltip content={<CustomTooltip unit="٪" darkMode={darkMode} />} />
+                          <Line type="monotone" dataKey="value" name="بازده حقوق مالکانه (ROE)" stroke="#f59e0b" strokeWidth={3} dot={{ r: 4 }} />
+                        </LineChart>
+                      ) : activeTab === 'efficiency' ? (
+                        <LineChart data={fundStore.efficiencyData}>
+                          <CartesianGrid strokeDasharray="2 5" vertical={false} stroke={gridStroke} />
+                          <XAxis dataKey="year" tick={{ fill: axisTickColor }} />
+                          <YAxis tickFormatter={compactNumber} tick={{ fill: axisTickColor }} />
+                          <Tooltip content={<CustomTooltip unit="٪" darkMode={darkMode} />} />
+                          <Line type="monotone" dataKey="value" name="بهای تمام‌شده / هزینه به درآمد" stroke="#ef4444" strokeWidth={3} dot={{ r: 4 }} />
+                        </LineChart>
+                      ) : (
+                        <LineChart data={fundStore.netMarginData}>
+                          <CartesianGrid strokeDasharray="2 5" vertical={false} stroke={gridStroke} />
+                          <XAxis dataKey="year" tick={{ fill: axisTickColor }} />
+                          <YAxis tickFormatter={compactNumber} tick={{ fill: axisTickColor }} />
+                          <Tooltip content={<CustomTooltip unit="٪" darkMode={darkMode} />} />
+                          <Line type="monotone" dataKey="value" name="حاشیه سود خالص" stroke="#10b981" strokeWidth={3} dot={{ r: 4 }} />
                         </LineChart>
                       )}
                     </ResponsiveContainer>
@@ -1251,12 +995,14 @@ export default function App() {
                 <section className={`rounded-2xl border p-6 ${cardStyle}`}>
                   <h2 className={`text-base font-bold mb-4 ${textHeading}`}>نسبت‌های مالی کلیدی</h2>
                   <div className="grid grid-cols-2 gap-3">
-                    {fundStore.ratiosDef.map((r: any) => (
+                    {fundStore.ratiosDef.map((r: any) => {
+                      const badge = r.status ? formatRatioBadge(r.status, r.value, r.unit, r.missingInputs) : null;
+                      return (
                       <div key={r.id} className={`p-3 rounded-xl border text-center ${subCardStyle}`}>
                         <span className={`text-[11px] block mb-1 ${textMuted}`}>{r.title}</span>
-                        <span className="text-base font-bold" dir="ltr">{r.current}{r.unit}</span>
+                        <span className="text-base font-bold" dir="ltr">{badge ? <span className={badge.style}>{badge.label}</span> : r.current == null ? '—' : String(r.current) + r.unit}</span>
                       </div>
-                    ))}
+                    ); })}
                   </div>
                 </section>
               </div>
@@ -1268,18 +1014,14 @@ export default function App() {
                     <thead className={tableHeaderBg}>
                       <tr>
                         <th className="p-3">نسبت</th>
-                        <th className="p-3 text-center">۱۴۰۱</th>
-                        <th className="p-3 text-center">۱۴۰۲</th>
-                        <th className="p-3 text-center">۱۴۰۳</th>
-                        <th className="p-3 text-center">۱۴۰۴</th>
-                        <th className="p-3 text-center text-amber-500">۱۴۰۵</th>
+                        {fundStore.netMarginData.map((row: { year: string }) => <th className="p-3 text-center" key={row.year}>{row.year}</th>)}
                       </tr>
                     </thead>
                     <tbody className={`divide-y ${darkMode ? 'divide-slate-800' : 'divide-slate-100'}`}>
                       {historicalRatiosTable.map((row, idx) => (
                         <tr key={idx} className={tableRowHover}>
                           <td className="p-3 font-medium">{row.name}</td>
-                          {row.data.map((d: any, i: number) => <td key={i} className="p-3 text-center" dir="ltr">{d.value}{row.unit}</td>)}
+                          {row.data.map((d: any, i: number) => <td key={i} className="p-3 text-center" dir="ltr">{d.value == null ? '—' : String(d.value) + row.unit}</td>)}
                         </tr>
                       ))}
                     </tbody>
@@ -1295,7 +1037,7 @@ export default function App() {
           <ErrorBoundary sectionName="گزارشات تفسیری و آرشیو کدال">
             <main className="max-w-7xl w-full mx-auto px-4 md:px-6 mt-6 space-y-6 pb-12">
               <section className={`rounded-2xl border p-5 ${cardStyle}`}>
-                <h2 className={`text-base font-bold mb-4 ${textHeading}`}>خلاصه گزارشات تفسیری مدیریت ({activeConfig.ticker})</h2>
+                <h2 className={`text-base font-bold mb-4 ${textHeading}`}>تحلیل جامع گزارشات تفسیری مدیریت و چشم‌انداز آینده ({activeConfig.ticker})</h2>
                 <div className="flex gap-2 overflow-x-auto pb-2 mb-4">
                   {interpretiveList.map((item, idx) => (
                     <button key={idx} onClick={() => setSelectedPeriodIdx(idx)} className={`px-4 py-2 rounded-xl text-xs font-bold cursor-pointer ${selectedPeriodIdx === idx ? 'bg-amber-500 text-white' : subCardStyle}`}>
@@ -1303,9 +1045,10 @@ export default function App() {
                     </button>
                   ))}
                 </div>
+                {!interpretiveList.length && <p className="text-xs">گزارش تفسیری در این نسخه ثبت نشده است.</p>}
                 {interpretiveList[selectedPeriodIdx] && (
-                  <div className={`p-4 rounded-xl border space-y-3 ${subCardStyle}`}>
-                    {interpretiveList[selectedPeriodIdx].pdfUrl && (
+                  <div className={`p-5 rounded-xl border space-y-3.5 ${subCardStyle}`}>
+                    {interpretiveList[selectedPeriodIdx].pdfUrl ? (
                       <div className="flex justify-end">
                         <a
                           href={interpretiveList[selectedPeriodIdx].pdfUrl}
@@ -1317,12 +1060,16 @@ export default function App() {
                           <span>باز کردن فایل PDF گزارش تفسیری مدیریت ({interpretiveList[selectedPeriodIdx].period})</span>
                         </a>
                       </div>
-                    )}
-                    <ul className="space-y-2 text-xs md:text-sm">
-                      {interpretiveList[selectedPeriodIdx].highlights.map((h: string, i: number) => <li key={i}>• {h}</li>)}
+                    ) : <span className="text-xs">لینک منبع ثبت نشده</span>}
+                    <ul className="space-y-3 text-xs md:text-sm leading-relaxed">
+                      {interpretiveList[selectedPeriodIdx].highlights.map((h: string, i: number) => (
+                        <li key={i} className={i === interpretiveList[selectedPeriodIdx].highlights.length - 1 ? 'p-3 rounded-lg bg-amber-500/10 border border-amber-500/25 font-medium' : ''}>
+                          {h}
+                        </li>
+                      ))}
                     </ul>
                     <div className="flex gap-2 pt-2">
-                      <input value={newNoteText} onChange={(e) => setNewNoteText(e.target.value)} placeholder="افزودن نکته جدید..." className={`flex-1 px-3 py-2 rounded-xl border text-xs ${cardStyle}`} />
+                      <input value={newNoteText} onChange={(e) => setNewNoteText(e.target.value)} placeholder="افزودن یادداشت تحلیلی جدید..." className={`flex-1 px-3 py-2 rounded-xl border text-xs ${cardStyle}`} />
                       <button onClick={handleAddInterpretiveHighlight} className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold cursor-pointer">ثبت</button>
                     </div>
                   </div>
@@ -1360,7 +1107,7 @@ export default function App() {
                           <td className="p-3 flex justify-center gap-2">
                             {item.link_excel && <a href={item.link_excel} target="_blank" rel="noreferrer" className="px-2 py-1 rounded bg-emerald-600/20 text-emerald-400 font-bold">اکسل</a>}
                             {item.link_pdf && <a href={item.link_pdf} target="_blank" rel="noreferrer" className="px-2 py-1 rounded bg-rose-600/20 text-rose-400 font-bold">PDF</a>}
-                            {item.link && <a href={item.link} target="_blank" rel="noreferrer" className="px-2 py-1 rounded bg-blue-600/20 text-blue-400 font-bold">مشاهده</a>}
+                            {item.link ? <a href={item.link} target="_blank" rel="noreferrer" className="px-2 py-1 rounded bg-blue-600/20 text-blue-400 font-bold">مشاهده</a> : <span>لینک منبع ثبت نشده</span>}
                           </td>
                         </tr>
                       ))}
@@ -1390,7 +1137,7 @@ export default function App() {
                       <Sparkles className="w-5 h-5 text-amber-500" />
                       تفسیرگر هوشمند افشای اطلاعات بااهمیت {activeConfig.ticker} ({activeConfig.fullName}) (گروه الف و ب)
                     </h2>
-                    <p className={`text-xs mt-1 ${textMuted}`}>دریافت مستقیم از دسته‌بندی category=2 وب‌سرویس کدال</p>
+                    <p className={`text-xs mt-1 ${textMuted}`}>خلاصه‌سازی متن اطلاعیه‌ها به همراه تحلیل اثرگذاری بر سهم</p>
                   </div>
                   <div className={`flex items-center p-1.5 rounded-xl border gap-1 ${subCardStyle}`}>
                     {(['all', 'الف', 'ب'] as const).map((g) => (
@@ -1411,7 +1158,7 @@ export default function App() {
               <section className="space-y-4">
                 {filteredDisclosures.length === 0 ? (
                   <div className={`rounded-2xl border p-8 text-center text-xs ${cardStyle} ${textMuted}`}>
-                    برای بارگذاری افشاهای بااهمیت این نماد، دکمه بنفش «همگام‌سازی کدال» در بالای صفحه را بزنید.
+                    افشایی برای این انتخاب در نسخه داده ثبت نشده است.
                   </div>
                 ) : (
                   filteredDisclosures.map((item: any) => (
@@ -1419,28 +1166,28 @@ export default function App() {
                       <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
                         <div className="flex items-center gap-2.5">
                           <span className={`px-3 py-1 rounded-lg text-xs font-bold ${item.group === 'الف' ? 'bg-rose-500/15 text-rose-400' : 'bg-blue-500/15 text-blue-400'}`}>
-                            افشای گروه {item.group}
+                            {item.group ? 'افشای گروه ' + item.group : 'گروه افشا نامشخص'}
                           </span>
                           <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${subCardStyle}`}>{item.date}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-400">
-                            {item.impact}
+                            {item.impact ?? 'اطلاعات منبع'}
                           </span>
-                          {item.link && (
+                          {item.link ? (
                             <a href={item.link} target="_blank" rel="noreferrer" className="px-3 py-1 rounded-lg bg-blue-600/20 text-blue-400 text-xs font-bold">
                               مشاهده در کدال
                             </a>
-                          )}
+                          ) : <span className="text-xs">لینک منبع ثبت نشده</span>}
                         </div>
                       </div>
                       <div className={`p-3.5 rounded-xl border mb-3 ${subCardStyle}`}>
-                        <span className="text-xs font-bold text-amber-500 block mb-1">عنوان اطلاعیه رسمی:</span>
-                        <p className={`text-xs md:text-sm font-semibold ${textHeading}`}>{item.simpleSummary}</p>
+                        <span className="text-xs font-bold text-amber-500 block mb-1">عنوان و چکیده متن اطلاعیه رسمی:</span>
+                        <p className={`text-xs md:text-sm font-semibold leading-relaxed ${textHeading}`}>{item.simpleSummary}</p>
                       </div>
                       <div className={`p-3.5 rounded-xl border ${darkMode ? 'bg-indigo-950/25 border-indigo-800/40' : 'bg-indigo-50/60 border-indigo-100'}`}>
-                        <span className="text-xs font-bold text-indigo-400 block mb-1">توضیح تحلیلی:</span>
-                        <p className={`text-xs md:text-sm leading-relaxed ${textMuted}`}>{item.aiTranslation}</p>
+                        <span className="text-xs font-bold text-indigo-400 block mb-1">تفسیر به زبان ساده و اثر بر سهم:</span>
+                        <p className={`text-xs md:text-sm leading-relaxed ${textMuted}`}>{item.aiTranslation ?? 'خلاصه تحلیلی ثبت نشده است.'}</p>
                       </div>
                     </div>
                   ))
@@ -1466,8 +1213,8 @@ export default function App() {
                   </div>
                   <div className={`p-4 rounded-xl border ${subCardStyle}`}>
                     <span className={`text-xs font-semibold block mb-1 ${textMuted}`}>پتانسیل رشد / حاشیه امنیت</span>
-                    <span className={`text-2xl font-black ${valuationResults.upsidePercent >= 0 ? 'text-emerald-400' : 'text-rose-400'}`} dir="ltr">
-                      {valuationResults.upsidePercent >= 0 ? `+${formatNum(valuationResults.upsidePercent, 1)}%` : `${formatNum(valuationResults.upsidePercent, 1)}%`}
+                    <span className={`text-2xl font-black ${valuationResults.upsidePercent === null || valuationResults.upsidePercent >= 0 ? 'text-emerald-400' : 'text-rose-400'}`} dir="ltr">
+                      {valuationResults.upsidePercent === null ? '—' : formatNum(valuationResults.upsidePercent, 1) + '٪'}
                     </span>
                   </div>
                 </div>
@@ -1546,6 +1293,7 @@ export default function App() {
         {/* TAB 6: SMART SALES & EPS FORECAST */}
         {mainPage === 'forecast' && (
           <ErrorBoundary sectionName="پیش‌بینی فروش و EPS">
+            <Suspense fallback={<p role="status">در حال بارگذاری پیش‌بینی…</p>}>
             <ForecastTab
               activeConfig={activeConfig}
               liveData={liveData}
@@ -1557,6 +1305,7 @@ export default function App() {
               textMuted={textMuted}
               borderSubtle={borderSubtle}
             />
+            </Suspense>
           </ErrorBoundary>
         )}
       </div>

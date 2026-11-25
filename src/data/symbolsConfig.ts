@@ -1,6 +1,6 @@
 export type SymbolKey = string;
 
-export const API_KEY = 'B9835WAJMf7TqMzE8NA9ySap8qKv8Rm8';
+export const API_KEY = '';
 
 export const EXCLUDED_CODAL_KEYWORDS = [
   'فعالیت هیئت مدیره',
