@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-const numbers = new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 2 });
+
 const compact = new Intl.NumberFormat('fa-IR', { notation: 'compact', maximumFractionDigits: 1 });
 export const compactNumber = (value: number) => compact.format(value);
 
@@ -19,14 +19,21 @@ export function useTerminalTheme() {
   return { theme, setTheme: (value: string) => update(validTheme(value)), darkMode: theme !== 'light' };
 }
 
-export function CompanyHeader({ ticker, name, industry, price, imageUrl }: {
-  ticker: string; name: string; industry: string; price?: number | string | null; imageUrl?: string;
+export function CompanyHeader({ ticker, name, industry, imageUrl, latestPeriod }: {
+  ticker: string; name: string; industry: string; imageUrl?: string; latestPeriod?: string;
 }) {
   const [failed, setFailed] = useState(false);
   return <header className="company-profile">
-    <div><small>{industry}</small><h1>{ticker}</h1><p>{name}</p></div>
-    <div><small>قیمت پایانی · ریال</small><strong dir="ltr">{price != null && price !== '' && Number.isFinite(Number(price)) ? numbers.format(Number(price)) : '—'}</strong></div>
-    {imageUrl && !failed && <img src={imageUrl} alt="" onError={() => setFailed(true)} />}
+    {imageUrl && !failed && <div className="company-profile-art">
+      <img src={imageUrl} alt="" onError={() => setFailed(true)} />
+    </div>}
+    <div className="company-profile-copy">
+      <small>{industry}</small><h1>{ticker}</h1><p>{name}</p>
+      <div className="company-profile-badges">
+        <span>صورت‌های مالی شرکت اصلی</span>
+        {latestPeriod && <span>آخرین گزارش: {latestPeriod}</span>}
+      </div>
+    </div>
   </header>;
 }
 

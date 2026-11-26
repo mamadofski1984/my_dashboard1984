@@ -1,3 +1,4 @@
+import CompanyFinancialShowcase from './components/CompanyFinancialShowcase';
 import { PriorityDataGaps, applyCorrections, type Corrections } from './components/PriorityDataGaps';
 import { marketRepository } from './repositories/MarketDataRepository';
 import type { ManifestData, MasterIndexData, SymbolDetailData } from './types/marketContract';
@@ -875,7 +876,7 @@ function Dashboard({ release, selectedSymbol, detail: publishedDetail, status, m
         {mainPage === 'overview' && (
           <ErrorBoundary sectionName="معرفی شرکت و اطلاعات پایه">
             <main className="max-w-7xl w-full mx-auto px-4 md:px-6 mt-6 space-y-6 pb-12">
-              <CompanyHeader key={activeConfig.ticker} ticker={activeConfig.ticker} name={activeConfig.fullName} industry={activeConfig.tseIndustryGroup} price={liveData.pc} imageUrl={instrument.image ? marketRepository.resolveAssetUrl(instrument.image) : undefined} />
+              <CompanyHeader key={activeConfig.ticker} ticker={activeConfig.ticker} name={activeConfig.fullName} industry={activeConfig.tseIndustryGroup} latestPeriod={view.financialTimeline.filter(row => row.value !== null || row.netProfit !== null).at(-1)?.label} imageUrl={instrument.image ? marketRepository.resolveAssetUrl(instrument.image) : undefined} />
               <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className={`rounded-2xl p-5 border relative overflow-hidden ${cardStyle}`}>
                   <div className="absolute top-0 right-0 w-1 h-full bg-emerald-500"></div>
@@ -927,7 +928,7 @@ function Dashboard({ release, selectedSymbol, detail: publishedDetail, status, m
                   </p>
                 </div>
               </section>
-
+              <CompanyFinancialShowcase detail={detail} ticker={activeConfig.ticker} cardStyle={cardStyle} />
             </main>
           </ErrorBoundary>
         )}
