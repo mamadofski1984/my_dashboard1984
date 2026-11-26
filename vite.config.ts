@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import react from '@vitejs/plugin-react'
 import { defineConfig, type Plugin } from 'vite'
 
@@ -45,6 +45,11 @@ function releaseAssets(): Plugin {
       const manifest = readFileSync(new URL('data/manifest.json', publicRoot))
       visit(JSON.parse(manifest.toString('utf8')))
       emit('data/manifest.json', manifest)
+      for (const name of ['hero-brand', 'tour-financials', 'tour-monthly', 'tour-sectors', 'tour-ai-insights', 'tour-forecast']) {
+        const fileName = 'home/' + name + '.webp'
+        const file = new URL(fileName, publicRoot)
+        if (existsSync(file)) emit(fileName, readFileSync(file))
+      }
       emit('favicon.svg', readFileSync(new URL('favicon.svg', publicRoot)))
     },
   }
