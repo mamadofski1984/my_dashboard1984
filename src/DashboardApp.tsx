@@ -738,6 +738,9 @@ function Dashboard({ release, selectedSymbol, detail: publishedDetail, status, m
               <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium cursor-pointer" title="انتخاب همزمان یک یا چند فایل اکسل">
                 <Upload className="w-3.5 h-3.5" /><span className="hidden md:inline">آپلود اکسل (تکی/گروهی)</span>
               </button>
+              <a href="#/creative" className="rounded-xl border px-3 py-2 text-xs inline-flex items-center gap-2">
+                <LayoutDashboard className="w-4 h-4" /> صفحهٔ خانه
+              </a>
               <button onClick={refresh} className="rounded-xl border px-3 py-2 text-xs">
                 <RefreshCw className="inline w-4 h-4" /> بررسی نسخه داده
               </button>
