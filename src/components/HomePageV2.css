@@ -9,6 +9,7 @@
 .fd-creative .fd-audit{background:#FEF3C7;border-radius:5px;padding-inline:5px;width:fit-content}
 .fd-kinetic{position:absolute;top:14px;left:14px;width:180px;background:#ffffffdf;border:1px solid #D6E4DD;border-radius:14px;padding:10px;box-shadow:0 16px 32px #0f1f2e17;backdrop-filter:blur(20px);font-size:11px;translate:var(--depth-x,0px) var(--depth-y,0px)}
 .fd-kinetic svg{width:100%;height:70px}.fd-kinetic>small{color:#4A5D6E;font-size:10px}
+@media(min-width:768px){.fd-kinetic.fd-mini{left:auto;right:14px}}
 .fd-mini-bars{display:flex;direction:ltr;height:72px;gap:5px;margin-block:8px}.fd-mini-bars button{position:relative;flex:1;background:transparent;border:0;min-width:0}
 .fd-mini-bars i{position:absolute;inset:0 2px 18px;background:#10B981;border-radius:3px;transform-origin:bottom}.fd-mini-bars .interim{background:repeating-linear-gradient(135deg,#D97706 0 3px,#FEF3C7 3px 6px)}
 .fd-mini-bars button[aria-pressed=true]{outline:1px solid #046C4E;border-radius:4px}.fd-mini-bars small{position:absolute;bottom:0;left:0;right:0;font-size:8px}

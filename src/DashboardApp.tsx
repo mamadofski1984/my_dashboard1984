@@ -931,9 +931,10 @@ function Dashboard({ release, selectedSymbol, detail: publishedDetail, status, m
           </div>
         )}
 
+        {showUsdHistory && <UsdHistoryDialog rates={rates} onClose={()=>setShowUsdHistory(false)} />}
+        <div key={mainPage} className={mainPage === 'education' ? undefined : 'fd-section-enter'}>
         {/* TAB 1: OVERVIEW */}
         {mainPage === 'fixtures' && <div className={`p-6 ${cardStyle}`}><Suspense fallback={<p role="status">در حال بارگذاری پیش‌نمایش…</p>}><MarketFixtures key={release.manifest.releaseId} manifest={release.manifest} /></Suspense></div>}
-        {showUsdHistory && <UsdHistoryDialog rates={rates} onClose={()=>setShowUsdHistory(false)} />}
         {mainPage === 'education' && <EducationAcademy target={educationTarget} onSelect={goToRatio}
           manifest={release.manifest} instruments={instruments} rates={rates} prices={prices} eps={eps}/>}
         {mainPage === 'guide' && <main className="max-w-7xl mx-auto w-full p-5">
@@ -1565,6 +1566,7 @@ function Dashboard({ release, selectedSymbol, detail: publishedDetail, status, m
             </Suspense>
           </ErrorBoundary>
         )}
+        </div>
       </div>
     </div>
   );

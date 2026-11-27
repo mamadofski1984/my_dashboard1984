@@ -146,14 +146,14 @@ export default function EducationAcademy({ target,onSelect,...caseProps }:CasePr
   const article=selected??educationArticles[0];
   const [category,setCategory]=useState<string>(article.category);
   useEffect(()=>{setCategory(article.category);},[article.category]);
-  return <main dir="rtl" className="edu-academy">
+  return <main dir="rtl" className="edu-academy fd-section-enter">
     <h2>آموزش</h2>
     <nav className="edu-nav" aria-label="دسته‌بندی آموزش">{categories.map(item=><button type="button" key={item} aria-pressed={category===item}
       onClick={()=>{setCategory(item);const first=educationArticles.find(entry=>entry.category===item);if(first)onSelect(first.slug);}}>{item}</button>)}</nav>
     <nav className="edu-nav edu-articles" aria-label="درسنامه‌ها">{educationArticles.filter(item=>item.category===category).map(item=><button
       key={item.slug} type="button" aria-current={!legacy&&article.slug===item.slug?'page':undefined} onClick={()=>onSelect(item.slug)}>{item.title.split('؛')[0]}</button>)}</nav>
-    {legacy ? <article id={'ratio-'+target} tabIndex={-1} className="edu-card edu-anchor"><h3>{legacy[0]}</h3><p>{legacy[1]}</p></article>
-      : <article key={article.slug} id={'ratio-'+article.slug} tabIndex={-1} className="edu-anchor">
+    {legacy ? <article key={target} id={'ratio-'+target} tabIndex={-1} className="edu-card edu-anchor fd-section-enter"><h3>{legacy[0]}</h3><p>{legacy[1]}</p></article>
+      : <article key={article.slug} id={'ratio-'+article.slug} tabIndex={-1} className="edu-anchor fd-section-enter">
         <Hero article={article}/><h1>{article.title}</h1>
         {article.sections.map(section=><section key={section.heading} className="edu-card">
           <h3>{section.heading}</h3>
