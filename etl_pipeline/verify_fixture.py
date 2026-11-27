@@ -2,11 +2,37 @@ import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from shutil import copytree
+from unittest.mock import patch
 
 import export_fixture as etl
 from canonical_codal import canonicalize, verified_parent
+from codal_documents import iranian_text
+import codal_documents as documents
 
 TICKER = "فملی"
+
+
+def check_disclosure_pdf_flow():
+    statement = "شرح رویداد و آثار مالی قرارداد برای شرکت اصلی " * 3
+    listing = b'<table><tr><td>1405/08/27</td><td>Evidence</td><td><a href="DownloadFile.aspx?id=ABC%3D">PDF</a></td></tr></table>'
+    payloads = [b"%PDF-main", listing, b"%PDF-attachment"]
+    with TemporaryDirectory() as cache, patch.object(documents, "CACHE", Path(cache)), \
+            patch.object(documents, "sleep"), patch.object(documents, "request", side_effect=payloads) as request, \
+            patch.object(documents, "parse_payload", return_value=(
+                {"paragraphs": [statement], "tables": [], "method": "pdf_text"}, [],
+            )):
+        _, errors, main, attachments = documents.disclosure_content(
+            "اخابر", "SRC_TEST", None, {"TracingNo": 123, "LetterSerial": "a%2Bb%3D"}, True,
+        )
+        assert not errors and main == statement and attachments[0]["text"] == statement
+        assert attachments[0]["uploadDate"] == "1405/08/27"
+        assert [call.args[0] for call in request.call_args_list] == [
+            "https://codal.ir/DownloadFile.aspx?hs=a%2Bb%3D&ft=1005&let=11",
+            "https://codal.ir/Reports/Attachment.aspx?LetterSerial=a%2Bb%3D",
+            "https://codal.ir/Reports/DownloadFile.aspx?id=ABC%3D",
+        ]
+        documents.disclosure_content("اخابر", "SRC_TEST", None, {"TracingNo": 123}, False)
+        assert request.call_count == 3
 
 
 def letter(trace, title, date, code="ن-۱۰", **fields):
@@ -103,9 +129,15 @@ def check_public_contract():
             months = [row["periodJalali"] for row in data["monthlySales"]]
             assert months == sorted(set(months)) and all("1403/01" <= month <= "1405/12" for month in months)
             assert sum(row["summaryType"] == "interpretive_report" for row in data["summaries"]) <= len(data["statements"]) + 1
+            for summary in data["summaries"]:
+                if pdf := summary.get("pdfContent"):
+                    assert summary["summaryType"] == "material_disclosure"
+                    texts = [pdf["main_text"], *(item["text"] for item in pdf["attachments"])]
+                    assert (pdf["status"] == "full_text") == any(iranian_text(text or "") for text in texts)
 
 
 if __name__ == "__main__":
+    check_disclosure_pdf_flow()
     check_selection()
     check_public_contract()
     print("Identity, amendment precedence, missing extraction, ten issuer contracts and deterministic exports passed")

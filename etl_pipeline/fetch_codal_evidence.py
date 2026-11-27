@@ -15,13 +15,18 @@ class RateLimited(Exception):
     """Stop the current issuer without retrying in the same run."""
 
 
-def request(url, timeout=20, follow_redirects=False):
-    command = ["curl", "-sS", "--max-time", str(timeout), "-w", "\n%{http_code}"]
+def request(url, timeout=20, follow_redirects=False, headers=None, diagnostics=None):
+    command = ["curl", "-sS", "--max-time", str(timeout), "-w", "\n%{http_code}\t%{content_type}"]
+    for name, value in (headers or {}).items():
+        command.extend(["-H", f"{name}: {value}"])
     if follow_redirects:
         command += ["-L", "--proto-redir", "=https"]
     result = run([*command, url], capture_output=True, check=True)
-    body, _, raw_status = result.stdout.rpartition(b"\n")
+    body, _, response = result.stdout.rpartition(b"\n")
+    raw_status, _, content_type = response.partition(b"\t")
     status = int(raw_status)
+    if diagnostics:
+        diagnostics(status, content_type.decode("ascii", errors="replace"), body[:20])
     if status == 429:
         raise RateLimited("HTTP 429 from Codal")
     if status != 200:

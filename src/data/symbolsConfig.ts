@@ -1,6 +1,6 @@
 export type SymbolKey = string;
 
-export const API_KEY = '';
+export const API_KEY = import.meta.env.VITE_BRS_API_KEY ?? "";
 
 export const EXCLUDED_CODAL_KEYWORDS = [
   'فعالیت هیئت مدیره',

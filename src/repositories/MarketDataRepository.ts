@@ -21,7 +21,7 @@ export class MarketDataRepository {
 
   resolveAssetUrl(asset: AssetRef): string {
     const path = asset.path.replace(/^\/+/, '');
-    if (!/^objects\/[a-z0-9_-]+\/[a-f0-9]{64}\/[A-Za-z0-9_-]+\.(json|webp)$/.test(path)) {
+    if (!/^objects\/[a-z0-9_-]+\/[a-f0-9]{64}\/[A-Za-z0-9_-]+\.(json|webp|png)$/.test(path)) {
       throw new Error('مسیر فایل داده نامعتبر است');
     }
     return new URL(path, this.manifestUrl).toString();

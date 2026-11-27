@@ -52,6 +52,11 @@ export interface FinancialStatement {
   ratios: SymbolRatio[];
 }
 export interface SymbolSummaryItem {
+  pdfContent?: {
+    status: 'full_text' | 'missing_body';
+    main_text: string | null;
+    attachments: { description: string; uploadDate: string | null; url: string; text: string | null }[];
+  };
   sourceId: string;
   summaryType: 'interpretive_report' | 'material_disclosure';
   disclosureGroup: 'A' | 'B' | null;

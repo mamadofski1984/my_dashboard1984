@@ -23,17 +23,18 @@ export function CompanyHeader({ ticker, name, industry, imageUrl, latestPeriod }
   ticker: string; name: string; industry: string; imageUrl?: string; latestPeriod?: string;
 }) {
   const [failed, setFailed] = useState(false);
+  const hasImage = Boolean(imageUrl && !failed);
   return <header className="company-profile">
-    {imageUrl && !failed && <div className="company-profile-art">
-      <img src={imageUrl} alt="" onError={() => setFailed(true)} />
-    </div>}
-    <div className="company-profile-copy">
-      <small>{industry}</small><h1>{ticker}</h1><p>{name}</p>
-      <div className="company-profile-badges">
-        <span>صورت‌های مالی شرکت اصلی</span>
-        {latestPeriod && <span>آخرین گزارش: {latestPeriod}</span>}
+    {hasImage ? (
+      <img className="company-profile-image" src={imageUrl} alt={`تصویر معرفی ${name}`} onError={() => setFailed(true)} />
+    ) : (
+      <div className="company-profile-fallback">
+        <small>{industry}</small>
+        <h1>{ticker}</h1>
+        <p>{name}</p>
       </div>
-    </div>
+    )}
+    {latestPeriod && <span className="company-profile-report">آخرین گزارش: {latestPeriod}</span>}
   </header>;
 }
 

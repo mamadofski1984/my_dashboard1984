@@ -5,7 +5,7 @@ import { defineConfig, type Plugin } from 'vite'
 
 function releaseAssets(): Plugin {
   const publicRoot = new URL('./public/', import.meta.url)
-  const assetPath = /^objects\/[a-z0-9_-]+\/[a-f0-9]{64}\/[A-Za-z0-9_-]+\.(json|webp)$/
+  const assetPath = /^objects\/[a-z0-9_-]+\/[a-f0-9]{64}\/[A-Za-z0-9_-]+\.(json|webp|png)$/
 
   return {
     name: 'published-market-release',

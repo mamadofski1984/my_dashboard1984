@@ -23,6 +23,7 @@ TARGET_TICKER = None
 # Enable for one ticker. Leave enabled when resuming with F5.
 REFRESH_SEARCH = False
 DOCUMENTS_ONLY = False
+# TODO (Phase 2): Complete binary attachment downloads and OCR the two scanned disclosures.
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS checkpoints (

@@ -8,6 +8,7 @@ from decimal import Decimal
 from datetime import datetime, timezone
 from jsonschema import Draft202012Validator, FormatChecker
 from canonical_codal import EVIDENCE, ISSUER_REGISTRY, canonicalize, period
+from codal_documents import CACHE as DOCUMENT_CACHE, iranian_text
 
 ROOT = Path(__file__).resolve().parent
 ARCHIVES = ROOT.parent / "public" / "Dashboard_Data"
@@ -34,7 +35,7 @@ NUMBER = nullable(DEC)
 BOOL = {"type": "boolean"}
 INT = {"type": "integer", "minimum": 0}
 TIME = {"type": "string", "format": "date-time", "pattern": "Z$"}
-FILE = obj(path={"type":"string", "pattern":r"^objects/[a-z0-9_-]+/[a-f0-9]{64}/[A-Za-z0-9_-]+\.(json|webp)$"},
+FILE = obj(path={"type":"string", "pattern":r"^objects/[a-z0-9_-]+/[a-f0-9]{64}/[A-Za-z0-9_-]+\.(json|webp|png)$"},
            sha256={"type":"string", "pattern":"^[a-f0-9]{64}$"}, bytes=INT)
 SOURCE = obj(id=ID, archiveDate=nullable(TEXT), url=nullable(TEXT))
 RATIO = obj(code=ID, value=NUMBER, unit=enum("PCT","TIMES","DAYS"),
@@ -53,6 +54,11 @@ SUMMARY = obj(summaryType=enum("interpretive_report","material_disclosure"), sou
               plainLanguageSummary=nullable(TEXT), investorTakeaway=nullable(TEXT),
               evidenceLocators=arr(obj(docId=ID,page=nullable(INT),section=nullable(TEXT),quote=nullable(TEXT))),
               reviewStatus=enum("source_only","auto_generated","human_verified"))
+SUMMARY["properties"]["pdfContent"] = obj(
+    status=enum("full_text", "missing_body"),
+    main_text=nullable(TEXT),
+    attachments=arr(obj(description=TEXT, uploadDate=nullable(TEXT), url=TEXT, text=nullable(TEXT))),
+)
 VENUE = enum("IME","IRENEX")
 QTY = obj(amount=DEC,unit=TEXT)
 PRICE = obj(amount=DEC,currency=TEXT,perUnit=TEXT)
@@ -117,6 +123,46 @@ def asset(folder, name, payload):
     path = f"objects/{folder}/{hash_value}/{name}"
     atomic_write(OUTPUT / path, payload)
     return {"path":path,"sha256":hash_value,"bytes":len(payload)}
+
+def symbol_image(ticker, instrument_id):
+    for extension in ("png", "webp"):
+        path = ARCHIVES.parent / "images" / f"{ticker}.{extension}"
+        if path.is_file():
+            return asset("images", f"{instrument_id}.{extension}", path.read_bytes())
+    return None
+
+
+def write_contracts():
+    for name, schema in SCHEMAS.items():
+        Draft202012Validator.check_schema(schema)
+        atomic_write(CONTRACTS / f"{name}.schema.json", encode(schema))
+
+
+def publish_manifest(pointers, source_freshness):
+    release = "REL_" + digest(encode(pointers))[:24].upper()
+    path = OUTPUT / "manifest.json"
+    previous = read(path) if path.exists() else None
+    if previous and previous["data"]["releaseId"] == release:
+        return
+    if previous:
+        atomic_write(OUTPUT / "releases" / (previous["data"]["releaseId"] + ".json"), path.read_bytes())
+    now = datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+    data = dict(releaseId=release, publishedAt=now, sourceFreshness=source_freshness, **pointers)
+    atomic_write(path, validate("manifest", data))
+
+
+def refresh_symbol_images():
+    write_contracts()
+    manifest = read(OUTPUT / "manifest.json")["data"]
+    master = read(OUTPUT / manifest["masterIndex"]["path"])["data"]
+    for instrument in master["instruments"]:
+        image = symbol_image(instrument["tickerFa"], instrument["instrumentId"])
+        if image is not None:
+            instrument["image"] = image
+    pointers = {key: manifest[key] for key in ("commodityChain", "macroIndicators")}
+    pointers["masterIndex"] = asset("master", "master_index.json", validate("master_index", master))
+    publish_manifest(pointers, manifest["sourceFreshness"])
+
 
 def money(value):
     return None if value is None else format(Decimal(str(value))*1_000_000,"f")
@@ -252,6 +298,21 @@ def symbol(ticker, code, archive):
             summaries.append(dict(summaryType=category,sourceId=ref,titleFa=row.get("title") or "",
               disclosureGroup=group,impactTag=None,plainLanguageSummary=None,investorTakeaway=None,
               evidenceLocators=[],reviewStatus="source_only"))
+            document_path = DOCUMENT_CACHE / f"ISS_{code}" / f"{ref}.json"
+            if category == "material_disclosure" and document_path.is_file():
+                document = json.loads(document_path.read_bytes())
+                if "pdfStatus" in document:
+                    main = document.get("main_text")
+                    attachments = document.get("attachments", [])
+                    verified = any(iranian_text(text or "") for text in
+                                   [main, *(attachment["text"] for attachment in attachments)])
+                    summaries[-1]["pdfContent"] = dict(
+                        status="full_text" if verified else "missing_body",
+                        main_text=main, attachments=[
+                            {key: item[key] for key in ("description", "uploadDate", "url", "text")}
+                            for item in attachments
+                        ],
+                    )
     sources_by_id = {item["id"]:item for item in sources}
     return dict(issuerId=f"ISS_{code}",sectorTemplate=profile,sources=list(sources_by_id.values()),
                 statements=list({item["revisionId"]:item for item in statements}.values()),
@@ -282,9 +343,7 @@ def export(audit_only=False):
         path.is_file() and read(path).get("letters") for path in (EVIDENCE / f"{ticker}.json" for ticker in IDS)
     ):
         raise ValueError("No verified Codal evidence cache. Run fetch_codal_evidence.py before exporting.")
-    for name,schema in SCHEMAS.items():
-        Draft202012Validator.check_schema(schema)
-        atomic_write(CONTRACTS / f"{name}.schema.json", encode(schema))
+    write_contracts()
     instruments, sectors = [], {}
     diagnostics = {}
     extraction_needed = []
@@ -317,8 +376,7 @@ def export(audit_only=False):
             f"{year}/{month:02}" for year, month in audit["missing_monthly"]
         })
         detail = asset("symbols", f"ISS_{code}.json",validate("symbol",normalized))
-        image_path = ARCHIVES.parent / "images" / f"{ticker}.webp"
-        image = asset("images",f"INS_{code}.webp",image_path.read_bytes()) if image_path.is_file() else None
+        image = symbol_image(ticker, f"INS_{code}")
         name = entry["displayName"]
         aliases = [legacy for legacy, actual in {"kala":"کالا","nan":"نان"}.items() if actual==ticker]
         instruments.append(dict(instrumentId=f"INS_{code}",issuerId=f"ISS_{code}",tickerFa=ticker,issuerNameFa=name,
@@ -333,8 +391,6 @@ def export(audit_only=False):
         masterIndex=asset("master","master_index.json",validate("master_index",dict(sectors=list(sectors.values()),instruments=instruments))),
         commodityChain=asset("commodity","commodity_chain.json",validate("commodity_chain",commodity)),
         macroIndicators=asset("macro","macro_indicators.json",validate("macro_indicators",macro)))
-    release = "REL_" + digest(encode(pointers))[:24].upper()
-    manifest = OUTPUT / "manifest.json"
     history_path = OUTPUT / "tsetmc_history.json"
     if history_path.exists():
         history = read(history_path)
@@ -350,18 +406,19 @@ def export(audit_only=False):
                 if value is not None:
                     eps[statement["revisionId"]] = float(value)
         atomic_write(history_path, encode(history))
-    previous = read(manifest) if manifest.exists() else None
-    if previous and previous["data"]["releaseId"]==release:
-        return
-    if previous:
-        atomic_write(OUTPUT / "releases" / (previous["data"]["releaseId"]+".json"),manifest.read_bytes())
-    now = datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00","Z")
-    data = dict(releaseId=release,publishedAt=now,**pointers,
-                sourceFreshness=[dict(source="codal_verified_archive",asOfUtc=None,status="archived"),
-                                 dict(source="synthetic",asOfUtc=None,status="fixture")])
-    atomic_write(manifest,validate("manifest",data))
+    publish_manifest(pointers, [
+        dict(source="codal_verified_archive", asOfUtc=None, status="archived"),
+        dict(source="synthetic", asOfUtc=None, status="fixture"),
+    ])
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--audit-only", action="store_true")
-    export(parser.parse_args().audit_only)
+    modes = parser.add_mutually_exclusive_group()
+    modes.add_argument("--audit-only", action="store_true")
+    modes.add_argument("--images-only", action="store_true")
+    options = parser.parse_args()
+    if options.images_only:
+        refresh_symbol_images()
+    else:
+        export(options.audit_only)
