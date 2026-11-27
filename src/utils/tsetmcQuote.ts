@@ -56,7 +56,7 @@ export async function fetchTsetmcQuote(instrument: MasterInstrument, signal: Abo
   const lows = recent.flatMap(row => positive(row.priceMin) ?? positive(row.pClosing) ?? []);
   const highs = recent.flatMap(row => positive(row.priceMax) ?? positive(row.pClosing) ?? []);
   return {
-    pc, z, eps, day,
+    pc, z, eps, day, ratioDay: day,
     mv: z === null ? null : pc * z,
     pe: reportedPe !== null && reportedPe !== 0 ? reportedPe : eps !== null && eps !== 0 ? pc / eps : null,
     pcp: previous === null ? null : (pc / previous - 1) * 100,
@@ -64,4 +64,35 @@ export async function fetchTsetmcQuote(instrument: MasterInstrument, signal: Abo
     pmax_1y: highs.length ? Math.max(...highs) : null,
     partial: z === null || eps === null || !lows.length || !highs.length,
   };
+}
+
+export type TsetmcQuote = Awaited<ReturnType<typeof fetchTsetmcQuote>>;
+const quoteKey = (id: string) => 'fundashboard:tsetmc-quote:v1:' + id;
+
+export function readTsetmcQuote(id: string): TsetmcQuote | undefined {
+  try {
+    const row = JSON.parse(localStorage.getItem(quoteKey(id)) ?? 'null');
+    if (!row || !/^\d{8}$/.test(row.day) || positive(row.pc) === null) return undefined;
+    return {
+      pc: positive(row.pc)!, day: row.day, ratioDay: /^\d{8}$/.test(row.ratioDay) ? row.ratioDay : row.day,
+      z: positive(row.z), mv: positive(row.mv), eps: number(row.eps), pe: number(row.pe),
+      pcp: number(row.pcp), pmin_1y: positive(row.pmin_1y), pmax_1y: positive(row.pmax_1y),
+      partial: row.partial === true,
+    };
+  } catch {
+    return undefined;
+  }
+}
+
+export function saveTsetmcQuote(id: string, incoming: TsetmcQuote, previous?: TsetmcQuote) {
+  const result = previous && previous.day > incoming.day ? previous
+    : previous && incoming.eps === null && previous.eps !== null
+      ? { ...incoming, eps: previous.eps, pe: previous.pe, ratioDay: previous.ratioDay }
+      : incoming;
+  try {
+    localStorage.setItem(quoteKey(id), JSON.stringify(result));
+  } catch {
+    // Storage may be disabled; the current view can still show the response.
+  }
+  return result;
 }

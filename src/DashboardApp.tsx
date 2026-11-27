@@ -5,7 +5,7 @@ import { coreRatios, historicalPe, historicalValuation, statementFact } from './
 import CompanyFinancialShowcase from './components/CompanyFinancialShowcase';
 import { PriorityDataGaps, applyCorrections, type Corrections } from './components/PriorityDataGaps';
 import { marketRepository } from './repositories/MarketDataRepository';
-import { fetchTsetmcQuote } from './utils/tsetmcQuote';
+import { fetchTsetmcQuote, readTsetmcQuote, saveTsetmcQuote } from './utils/tsetmcQuote';
 import type { ManifestData, MasterIndexData, SymbolDetailData } from './types/marketContract';
 import { runIdempotentLegacyMigration, readUserStorage } from './utils/legacyStorageMigration';
 import { fiscalScope, type AnnualScope, extractActiveAnnualStatements, formatRatioBadge, instrumentProfile, mapContractDetail, normalizeMarketSearch, parseDecimalSafe } from './utils/contractViewMapper';
@@ -93,6 +93,12 @@ const CustomTooltip = ({ active, payload, label, unit = '', darkMode = false }: 
 };
 
 type DashboardPage = 'overview' | 'fundamental' | 'interpretive' | 'disclosures' | 'valuation' | 'forecast' | 'fixtures' | 'education' | 'guide';
+
+function tsetmcDate(day: string) {
+  if (!/^\d{8}$/.test(day)) return '';
+  const date = new Date(`${day.slice(0, 4)}-${day.slice(4, 6)}-${day.slice(6)}T00:00:00Z`);
+  return Number.isNaN(date.valueOf()) ? '' : new Intl.DateTimeFormat('fa-IR-u-ca-persian', { timeZone: 'UTC' }).format(date);
+}
 
 function pageFromUrl(): DashboardPage {
   const tab = new URLSearchParams(location.hash.split('?')[1]).get('tab');
@@ -221,7 +227,7 @@ function Dashboard({ release, selectedSymbol, detail: publishedDetail, status, m
     .sort((a, b) => b.fiscalYear - a.fiscalYear || b.periodMonths - a.periodMonths)[0];
   const equity = statementFact(latestFinancial, 'TOTAL_EQUITY');
   const recordedCapital = statementFact(latestFinancial, 'CAPITAL', 'REGISTERED_CAPITAL');
-  const [quote, setQuote] = useState<Awaited<ReturnType<typeof fetchTsetmcQuote>>>();
+  const [quote, setQuote] = useState(() => readTsetmcQuote(instrument.instrumentId));
   const [quoteStatus, setQuoteStatus] = useState('');
   const [quoteLoading, setQuoteLoading] = useState(false);
   const quoteRequest = useRef<AbortController | null>(null);
@@ -232,21 +238,22 @@ function Dashboard({ release, selectedSymbol, detail: publishedDetail, status, m
     quoteRequest.current = controller;
     setQuoteLoading(true);
     setQuoteStatus('در حال دریافت داده بازار از TSETMC…');
-    refresh();
     try {
       const latest = await fetchTsetmcQuote(instrument, controller.signal);
       if (controller.signal.aborted) return;
-      setQuote(latest);
-      const date = /^\d{8}$/.test(latest.day)
-        ? new Intl.DateTimeFormat('fa-IR-u-ca-persian', { timeZone: 'UTC' }).format(
-          new Date(`${latest.day.slice(0, 4)}-${latest.day.slice(4, 6)}-${latest.day.slice(6)}T00:00:00Z`)) : '';
+      const saved = saveTsetmcQuote(instrument.instrumentId, latest, quote);
+      setQuote(saved);
+      const date = tsetmcDate(saved.day);
       setQuoteStatus((latest.partial ? 'قیمت بازار دریافت شد؛ برخی شاخص‌ها در دسترس نیستند' : 'داده بازار از TSETMC دریافت شد')
         + (date ? ` · تاریخ معامله ${date}` : ''));
     } catch {
       if (!controller.signal.aborted) setQuoteStatus('دریافت داده تازه از TSETMC ناموفق بود؛ آخرین دادهٔ موجود نمایش داده می‌شود.');
     } finally {
       quoteRequest.current = null;
-      if (!controller.signal.aborted) setQuoteLoading(false);
+      if (!controller.signal.aborted) {
+        setQuoteLoading(false);
+        refresh();
+      }
     }
   }
   const liveData = useMemo(() => {
@@ -1005,7 +1012,8 @@ function Dashboard({ release, selectedSymbol, detail: publishedDetail, status, m
                     <span className={`text-xs font-bold ${(liveData.pcp ?? 0) < 0 ? 'text-rose-500' : 'text-emerald-400'}`} dir="ltr">{liveData.pcp === null ? '—' : `${formatNum(liveData.pcp, 2)}٪`}</span>
                   </div>
                   <p className={`text-xs mt-2 ${textMuted}`}>بازه سال: {formatNum(liveData.pmin_1y)} - {formatNum(liveData.pmax_1y)}</p>
-                  {!quote && !snapshot?.closePrice && archivedClose && <p className={`text-xs mt-1 ${textMuted}`}>آخرین قیمت آرشیو TSETMC · {archivedClose.dateJalali}</p>}
+                  {quote ? <p className={`text-xs mt-1 ${textMuted}`}>آخرین معاملهٔ ثبت‌شده در TSETMC · {tsetmcDate(quote.day) || 'تاریخ نامشخص'}</p>
+                    : !snapshot?.closePrice && archivedClose && <p className={`text-xs mt-1 ${textMuted}`}>آخرین قیمت آرشیو TSETMC · {archivedClose.dateJalali}</p>}
                 </div>
 
                 <div className={`rounded-2xl p-5 border relative overflow-hidden ${cardStyle}`}>
@@ -1022,10 +1030,11 @@ function Dashboard({ release, selectedSymbol, detail: publishedDetail, status, m
                   <div className="absolute top-0 right-0 w-1 h-full bg-blue-500"></div>
                   <span className={`text-xs ${textMuted}`}>نسبت‌های ارزش‌گذاری</span>
                   <div className="flex items-baseline justify-between mt-2">
-                    <div><span className={`text-xs ${textMuted}`}>P/E: </span><span className="text-xl font-bold">{formatNum(liveData.pe, 2)}</span></div>
+                    <div><span className={`text-xs ${textMuted}`}>P/E (TTM): </span><span className="text-xl font-bold">{formatNum(liveData.pe, 2)}</span></div>
                     <div><span className={`text-xs ${textMuted}`}>P/B: </span><span className="text-xl font-bold text-blue-400">{formatNum(liveMetrics.livePB, 2)}</span></div>
                   </div>
-                  <p className={`text-xs mt-2 ${textMuted}`}>EPS: {formatNum(liveData.eps)} ریال</p>
+                  <p className={`text-xs mt-2 ${textMuted}`}>EPS (TTM): {formatNum(liveData.eps)} ریال</p>
+                  {quote && (quote.eps !== null || quote.pe !== null) && <p className={`text-xs mt-1 ${textMuted}`}>TSETMC · {tsetmcDate(quote.ratioDay) || 'تاریخ نامشخص'}</p>}
                 </div>
 
                 <div className={`rounded-2xl p-5 border relative overflow-hidden ${cardStyle}`}>
