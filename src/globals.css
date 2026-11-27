@@ -17,7 +17,8 @@
 @font-face {
   font-family: 'B Nazanin';
   src: local('B Nazanin'), local('BNazanin'),
-    url('https://www.yourfreefont.com/catalog-subset/b-nazanin-font.woff2') format('woff2');
+    url('https://cdn.jsdelivr.net/gh/intuxicated/css-persian@master/fonts/BNazanin.ttf') format('truetype'),
+    url('https://cdn.jsdelivr.net/gh/artbijan/Web-Font@main/IRNazanin.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
