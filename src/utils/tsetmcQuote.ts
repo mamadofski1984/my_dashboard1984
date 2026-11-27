@@ -1,11 +1,13 @@
 import type { MasterInstrument } from '../types/marketContract';
 import { normalizeMarketSearch } from './contractViewMapper';
+import { normalizeDigits } from './persianFormat';
 
 type Row = Record<string, unknown>;
 const api = 'https://cdn.tsetmc.com/api/';
 const number = (value: unknown) => {
   if (typeof value !== 'number' && (typeof value !== 'string' || !value.trim())) return null;
-  const parsed = Number(value);
+  const parsed = Number(typeof value === 'string'
+    ? normalizeDigits(value).trim().replace(/[,٬]/g, '').replace('٫', '.').replace('−', '-') : value);
   return Number.isFinite(parsed) ? parsed : null;
 };
 const positive = (value: unknown) => {
@@ -44,7 +46,9 @@ export async function fetchTsetmcQuote(instrument: MasterInstrument, signal: Abo
   if (pc === null) throw new Error('Missing TSETMC closing price');
   const previous = positive(close?.priceYesterday);
   const z = positive(info?.zTitad);
-  const eps = number(info?.eps?.epsValue ?? info?.eps);
+  const eps = number(info?.eps?.estimatedEPS) ?? number(info?.eps?.epsValue)
+    ?? number(info?.estimatedEPS) ?? number(info?.eps) ?? number(close?.eps);
+  const reportedPe = number(info?.eps?.pe) ?? number(info?.pe) ?? number(close?.pe);
   const day = String(close?.dEven ?? '');
   const cutoff = /^\d{8}$/.test(day) ? Number(day) - 10000 : Infinity;
   const recent: Row[] = Array.isArray(history?.closingPriceDaily)
@@ -54,7 +58,7 @@ export async function fetchTsetmcQuote(instrument: MasterInstrument, signal: Abo
   return {
     pc, z, eps, day,
     mv: z === null ? null : pc * z,
-    pe: eps !== null && eps > 0 ? pc / eps : null,
+    pe: reportedPe !== null && reportedPe !== 0 ? reportedPe : eps !== null && eps !== 0 ? pc / eps : null,
     pcp: previous === null ? null : (pc / previous - 1) * 100,
     pmin_1y: lows.length ? Math.min(...lows) : null,
     pmax_1y: highs.length ? Math.max(...highs) : null,
