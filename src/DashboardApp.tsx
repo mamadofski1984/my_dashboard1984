@@ -5,6 +5,7 @@ import { coreRatios, historicalPe, historicalValuation, statementFact } from './
 import CompanyFinancialShowcase from './components/CompanyFinancialShowcase';
 import { PriorityDataGaps, applyCorrections, type Corrections } from './components/PriorityDataGaps';
 import { marketRepository } from './repositories/MarketDataRepository';
+import { fetchTsetmcQuote } from './utils/tsetmcQuote';
 import type { ManifestData, MasterIndexData, SymbolDetailData } from './types/marketContract';
 import { runIdempotentLegacyMigration, readUserStorage } from './utils/legacyStorageMigration';
 import { fiscalScope, type AnnualScope, extractActiveAnnualStatements, formatRatioBadge, instrumentProfile, mapContractDetail, normalizeMarketSearch, parseDecimalSafe } from './utils/contractViewMapper';
@@ -211,12 +212,58 @@ function Dashboard({ release, selectedSymbol, detail: publishedDetail, status, m
   const efficiencyLabel = detail?.sectorTemplate === 'banking'
     ? 'نسبت هزینه عملیاتی بانک به درآمد عملیاتی' : 'نسبت بهای تمام‌شده به درآمد';
   const snapshot = instrument.snapshot;
-  const liveData = useMemo(() => ({
-    pc: parseDecimalSafe(snapshot?.closePrice), mv: parseDecimalSafe(snapshot?.marketCapIrr),
-    pe: parseDecimalSafe(snapshot?.peTtm), pb: parseDecimalSafe(snapshot?.pb),
-    eps: null, z: null, pcp: null, pmin_1y: null, pmax_1y: null,
-    m_board: instrument.venue ?? '—',
-  }), [snapshot, instrument.venue]);
+  const {rates,prices,eps,insights} = useSupplementalData();
+  const recentPrices = prices[instrument.instrumentId];
+  const archivedClose = recentPrices?.at(-1);
+  const archivedPrevious = recentPrices?.at(-2);
+  const latestFinancial = [...(publishedDetail?.statements ?? [])]
+    .filter(row => row.consolidationScope === 'standalone' && !row.isFixture && !row.isSuperseded)
+    .sort((a, b) => b.fiscalYear - a.fiscalYear || b.periodMonths - a.periodMonths)[0];
+  const equity = statementFact(latestFinancial, 'TOTAL_EQUITY');
+  const recordedCapital = statementFact(latestFinancial, 'CAPITAL', 'REGISTERED_CAPITAL');
+  const [quote, setQuote] = useState<Awaited<ReturnType<typeof fetchTsetmcQuote>>>();
+  const [quoteStatus, setQuoteStatus] = useState('');
+  const [quoteLoading, setQuoteLoading] = useState(false);
+  const quoteRequest = useRef<AbortController | null>(null);
+  useEffect(() => () => quoteRequest.current?.abort(), []);
+  async function refreshMarket() {
+    if (quoteRequest.current) return;
+    const controller = new AbortController();
+    quoteRequest.current = controller;
+    setQuoteLoading(true);
+    setQuoteStatus('در حال دریافت داده بازار از TSETMC…');
+    refresh();
+    try {
+      const latest = await fetchTsetmcQuote(instrument, controller.signal);
+      if (controller.signal.aborted) return;
+      setQuote(latest);
+      const date = /^\d{8}$/.test(latest.day)
+        ? new Intl.DateTimeFormat('fa-IR-u-ca-persian', { timeZone: 'UTC' }).format(
+          new Date(`${latest.day.slice(0, 4)}-${latest.day.slice(4, 6)}-${latest.day.slice(6)}T00:00:00Z`)) : '';
+      setQuoteStatus((latest.partial ? 'قیمت بازار دریافت شد؛ برخی شاخص‌ها در دسترس نیستند' : 'داده بازار از TSETMC دریافت شد')
+        + (date ? ` · تاریخ معامله ${date}` : ''));
+    } catch {
+      if (!controller.signal.aborted) setQuoteStatus('دریافت داده تازه از TSETMC ناموفق بود؛ آخرین دادهٔ موجود نمایش داده می‌شود.');
+    } finally {
+      quoteRequest.current = null;
+      if (!controller.signal.aborted) setQuoteLoading(false);
+    }
+  }
+  const liveData = useMemo(() => {
+    const pc = quote?.pc ?? parseDecimalSafe(snapshot?.closePrice) ?? archivedClose?.closeIrr ?? null;
+    const z = quote?.z ?? (recordedCapital !== null && recordedCapital > 0 ? recordedCapital / 1000 : null);
+    const mv = quote?.mv ?? (!quote ? parseDecimalSafe(snapshot?.marketCapIrr) : null)
+      ?? (pc === null || z === null ? null : pc * z);
+    return {
+      pc, mv, z, pe: quote ? quote.pe : parseDecimalSafe(snapshot?.peTtm),
+      pb: (!quote ? parseDecimalSafe(snapshot?.pb) : null) ?? (mv !== null && equity !== null && equity > 0 ? mv / equity : null),
+      eps: quote?.eps ?? null,
+      pcp: quote ? quote.pcp : !snapshot?.closePrice && archivedClose && archivedPrevious?.closeIrr
+        ? (archivedClose.closeIrr / archivedPrevious.closeIrr - 1) * 100 : null,
+      pmin_1y: quote?.pmin_1y ?? null, pmax_1y: quote?.pmax_1y ?? null,
+      m_board: instrument.venue ?? '—',
+    };
+  }, [snapshot, instrument.venue, quote, equity, recordedCapital, archivedClose, archivedPrevious]);
   const INTERPRETIVE_NOTES_KEY = instrument.issuerId + '_user_notes_v2';
   const FUNDAMENTAL_DYNAMIC_KEY = instrument.issuerId + '_user_overrides_v2';
   const [symbolSearchQuery, setSymbolSearchQuery] = useState('');
@@ -272,7 +319,6 @@ function Dashboard({ release, selectedSymbol, detail: publishedDetail, status, m
     window.addEventListener('popstate',sync);
     return ()=>{window.removeEventListener('hashchange',sync);window.removeEventListener('popstate',sync);};
   },[]);
-  const {rates,prices,eps,insights} = useSupplementalData();
   const issuerInsights = insights[instrument.issuerId] ?? {};
   useEffect(() => {
     if(mainPage !== 'education' || !educationTarget)return;
@@ -453,7 +499,8 @@ function Dashboard({ release, selectedSymbol, detail: publishedDetail, status, m
     const marketCapToman = liveData.mv === null ? null : liveData.mv / 10 / 1e9;
     const marketCapUSD = marketCapToman === null ? null : marketCapToman * 10_000 / fx1405;
     return { marketCapToman, marketCapUSD, livePB: liveData.pb,
-      registeredCapitalTomanBillion: null, registeredCapitalHemmat: null };
+      registeredCapitalTomanBillion: liveData.z === null ? null : liveData.z * 100 / 1e9,
+      registeredCapitalHemmat: liveData.z === null ? null : liveData.z * 100 / 1e12 };
   }, [liveData, fx1405]);
 
   const valuationResults = useMemo(() => {
@@ -797,8 +844,8 @@ function Dashboard({ release, selectedSymbol, detail: publishedDetail, status, m
               <a href="#/creative" className="rounded-xl border px-3 py-2 text-xs inline-flex items-center gap-2">
                 <LayoutDashboard className="w-4 h-4" /> صفحهٔ خانه
               </a>
-              <button onClick={refresh} className="rounded-xl border px-3 py-2 text-xs">
-                <RefreshCw className="inline w-4 h-4" /> بررسی نسخه داده
+              <button onClick={refreshMarket} disabled={quoteLoading} className="rounded-xl border px-3 py-2 text-xs disabled:opacity-60">
+                <RefreshCw className="inline w-4 h-4" /> بررسی نسخه داده و قیمت بازار
               </button>
             </div>
           </div>
@@ -810,6 +857,7 @@ function Dashboard({ release, selectedSymbol, detail: publishedDetail, status, m
             <div className="flex flex-wrap items-center gap-4">
               <span>• {instrument.coverageState === 'full' ? 'پوشش کامل' : instrument.coverageState === 'partial' ? 'پوشش جزئی' : 'فقط فهرست'}</span>
               <span>• {localStatus?.text ?? status}</span>
+              {quoteStatus && <span role="status">• {quoteStatus}</span>}
             </div>
             <div className="flex items-center gap-1.5">
               <span>دلار مبنا (ریال)</span>
@@ -954,9 +1002,10 @@ function Dashboard({ release, selectedSymbol, detail: publishedDetail, status, m
                   <span className={`text-xs ${textMuted}`}>قیمت پایانی سهم (ریال)</span>
                   <div className="flex items-baseline justify-between mt-2">
                     <span className={`text-2xl font-bold ${textHeading}`} dir="ltr">{formatNum(liveData.pc)}</span>
-                    <span className="text-xs font-bold text-emerald-400" dir="ltr">{liveData.pcp ?? "—"}</span>
+                    <span className={`text-xs font-bold ${(liveData.pcp ?? 0) < 0 ? 'text-rose-500' : 'text-emerald-400'}`} dir="ltr">{liveData.pcp === null ? '—' : `${formatNum(liveData.pcp, 2)}٪`}</span>
                   </div>
                   <p className={`text-xs mt-2 ${textMuted}`}>بازه سال: {formatNum(liveData.pmin_1y)} - {formatNum(liveData.pmax_1y)}</p>
+                  {!quote && !snapshot?.closePrice && archivedClose && <p className={`text-xs mt-1 ${textMuted}`}>آخرین قیمت آرشیو TSETMC · {archivedClose.dateJalali}</p>}
                 </div>
 
                 <div className={`rounded-2xl p-5 border relative overflow-hidden ${cardStyle}`}>
