@@ -26,3 +26,22 @@ dist-ssr
 __pycache__/
 /etl_pipeline/codal_evidence/
 etl_pipeline/.pdf_deps/
+
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+.npmrc
+.netrc
+_netrc
+credentials.json
+credentials.local.json
+secrets.json
+secrets.local.json
+*.bak
+/assets/
