@@ -1,9 +1,13 @@
+import EducationAcademy, { articleSlug } from './components/EducationAcademy';
+import { AnalystSummary, ChartGuide, LocalNote, Materiality, UsdHistoryDialog, guide, lessons } from './components/DashboardAdditions';
+import { averageFx, monthEndFx, DEFAULT_USD_IRR, inMillionsUsd, jalaliKey, recentDisclosures, useSupplementalData } from './utils/supplementalMarketData';
+import { coreRatios, historicalPe, historicalValuation, statementFact } from './utils/dashboardRatios';
 import CompanyFinancialShowcase from './components/CompanyFinancialShowcase';
 import { PriorityDataGaps, applyCorrections, type Corrections } from './components/PriorityDataGaps';
 import { marketRepository } from './repositories/MarketDataRepository';
 import type { ManifestData, MasterIndexData, SymbolDetailData } from './types/marketContract';
 import { runIdempotentLegacyMigration, readUserStorage } from './utils/legacyStorageMigration';
-import { fiscalScope, type AnnualScope, formatRatioBadge, instrumentProfile, mapContractDetail, normalizeMarketSearch, parseDecimalSafe } from './utils/contractViewMapper';
+import { fiscalScope, type AnnualScope, extractActiveAnnualStatements, formatRatioBadge, instrumentProfile, mapContractDetail, normalizeMarketSearch, parseDecimalSafe } from './utils/contractViewMapper';
 import { createMarketBackup, prepareMarketRestore, restoreMarketBackup } from './utils/marketBackup';
 import { calculateRatios } from './utils/financialRatios';
 import {CompanyHeader,useTerminalTheme,ChartGradients,compactNumber} from './components/Terminal';
@@ -87,12 +91,12 @@ const CustomTooltip = ({ active, payload, label, unit = '', darkMode = false }: 
   return null;
 };
 
-type DashboardPage = 'overview' | 'fundamental' | 'interpretive' | 'disclosures' | 'valuation' | 'forecast' | 'fixtures';
+type DashboardPage = 'overview' | 'fundamental' | 'interpretive' | 'disclosures' | 'valuation' | 'forecast' | 'fixtures' | 'education' | 'guide';
 
 function pageFromUrl(): DashboardPage {
   const tab = new URLSearchParams(location.hash.split('?')[1]).get('tab');
   switch (tab) {
-    case 'fundamental': case 'interpretive': case 'disclosures': case 'valuation': case 'forecast': return tab;
+    case 'fundamental': case 'interpretive': case 'disclosures': case 'valuation': case 'forecast': case 'education': case 'guide': return tab;
     default: return 'overview';
   }
 }
@@ -258,10 +262,29 @@ function Dashboard({ release, selectedSymbol, detail: publishedDetail, status, m
   const [selectedPeriodIdx, setSelectedPeriodIdx] = useState<number>(0);
   const [newNoteText, setNewNoteText] = useState<string>('');
 
-  const [fx1405, setFx1405] = useState<number>(135000);
+  const [fx1405, setFx1405] = useState<number>(DEFAULT_USD_IRR);
+  const [showUsdHistory, setShowUsdHistory] = useState(false);
+  const ratioFromUrl=()=>new URLSearchParams(location.hash.split('?')[1]).get('ratio') ?? '';
+  const [educationTarget, setEducationTarget] = useState(ratioFromUrl);
+  useEffect(()=>{
+    const sync=()=>setEducationTarget(ratioFromUrl());
+    window.addEventListener('hashchange',sync);
+    window.addEventListener('popstate',sync);
+    return ()=>{window.removeEventListener('hashchange',sync);window.removeEventListener('popstate',sync);};
+  },[]);
+  const {rates,prices,eps,insights} = useSupplementalData();
+  const issuerInsights = insights[instrument.issuerId] ?? {};
+  useEffect(() => {
+    if(mainPage !== 'education' || !educationTarget)return;
+    const frame=requestAnimationFrame(()=>{
+      const card=document.getElementById('ratio-'+articleSlug(educationTarget));
+      card?.focus({preventScroll:true});
+      card?.scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
+    });
+    return ()=>cancelAnimationFrame(frame);
+  },[mainPage,educationTarget]);
   const [activeTab, setActiveTab] = useState(() => new URLSearchParams(location.hash.split('?')[1]).get('view') === 'monthly' ? 'monthly_income' : 'annual_income');
-  const [currency] = useState('IRT');
-  const [customUsdRate] = useState(65000);
+  const [currency,setCurrency] = useState<'IRR'|'USD'>('IRR');
 
   const normalizedQuery = normalizeMarketSearch(symbolSearchQuery);
   const filteredSymbolsList = profiles.filter(profile =>
@@ -428,7 +451,7 @@ function Dashboard({ release, selectedSymbol, detail: publishedDetail, status, m
 
   const liveMetrics = useMemo(() => {
     const marketCapToman = liveData.mv === null ? null : liveData.mv / 10 / 1e9;
-    const marketCapUSD = marketCapToman === null ? null : marketCapToman * 1e3 / fx1405;
+    const marketCapUSD = marketCapToman === null ? null : marketCapToman * 10_000 / fx1405;
     return { marketCapToman, marketCapUSD, livePB: liveData.pb,
       registeredCapitalTomanBillion: null, registeredCapitalHemmat: null };
   }, [liveData, fx1405]);
@@ -494,9 +517,9 @@ function Dashboard({ release, selectedSymbol, detail: publishedDetail, status, m
   const paginatedCodalList = filteredCodalList.slice((codalPage - 1) * ITEMS_PER_PAGE, codalPage * ITEMS_PER_PAGE);
 
   const filteredDisclosures = useMemo(() => {
-    const base = liveDisclosures || [];
+    const base = recentDisclosures(liveDisclosures);
     const list = disclosureGroupFilter === 'all' ? base : base.filter((d: any) => d.group === disclosureGroupFilter);
-    return [...list].sort((a: any, b: any) => String(b.date).localeCompare(String(a.date)));
+    return list;
   }, [liveDisclosures, disclosureGroupFilter]);
 
   const handleExportJSON = () => {
@@ -510,25 +533,47 @@ function Dashboard({ release, selectedSymbol, detail: publishedDetail, status, m
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
-  const getHistoricalUsdRate = (year: string, currentRate: number) => {
-    const rates: Record<string, number> = { '۱۴۰۱': 37000, '۱۴۰۲': 54000, '۱۴۰۳': 70000, '۱۴۰۴': 112000 };
-    return rates[year] || currentRate;
-  };
-
   const annualIncomeForCurrency = (rows: typeof view.financialTimeline) => rows.map(item => {
-    const rate = getHistoricalUsdRate(item.year, customUsdRate);
-    return {
-      ...item,
-      usdValue: item.value == null ? null : Number(((item.value * 1000) / rate).toFixed(1)),
-      usdNetProfit: item.netProfit == null ? null : Number(((item.netProfit * 1000) / rate).toFixed(1)),
-    };
+    const end = jalaliKey(item.statement?.periodEndJalali ?? '');
+    const rate = currency === 'USD' && item.statement && end ? averageFx(rates,end,item.statement.periodMonths) : null;
+    return {...item, revenueDisplay:currency==='IRR' && item.value!==null ? item.value*10 : inMillionsUsd(item.value,rate),
+      profitDisplay:currency==='IRR' && item.netProfit!==null ? item.netProfit*10 : inMillionsUsd(item.netProfit,rate)};
   });
-
+  const monthlyIncomeForCurrency = view.fundStore.incomeData.map((row,index)=>{
+    const convert = (year:number,value:number|null) => currency==='IRR' ? value===null?null:value*10 :
+      inMillionsUsd(value,monthEndFx(rates,year+'/'+String(index+1).padStart(2,'0')+'/01'));
+    return {...row,year1403:convert(1403,row.year1403),year1404:convert(1404,row.year1404),year1405:convert(1405,row.year1405)};
+  });
+  const activeStatements=extractActiveAnnualStatements(detail?.statements ?? []).activeStatements;
+  const latestStatement=view.financialTimeline.findLast(row=>row.statement)?.statement;
+  const materialityStatement=(date:string)=>activeStatements.filter(row=>row.consolidationScope==='standalone'
+    && row.periodMonths===12 && !!row.periodEndJalali && jalaliKey(row.periodEndJalali)<=jalaliKey(date))
+    .sort((a,b)=>String(b.periodEndJalali).localeCompare(String(a.periodEndJalali)))[0];
+  const openingStatement=latestStatement && activeStatements.filter(row=>row.consolidationScope===latestStatement.consolidationScope
+    && row.periodMonths===12 && row.fiscalYear===latestStatement.fiscalYear-1)
+    .sort((a,b)=>Number(b.isAudited===true)-Number(a.isAudited===true))[0];
+  const showCogs=detail?.sectorTemplate==='manufacturing' && !!statementFact(latestStatement,'COST_OF_REVENUE');
+  const showEfficiency=showCogs || detail?.sectorTemplate==='banking';
+  const ratioCards=[
+    ...view.fundStore.ratiosDef.filter(r=>r.code!=='COST_TO_REVENUE'||showCogs),
+    ...coreRatios(latestStatement,openingStatement,detail?.sectorTemplate).map(r=>({...r,id:r.code,title:lessons[r.code][0],current:parseDecimalSafe(r.value)})),
+    ...(['PE','PB'] as const).map(code=>({code,id:code,title:code==='PE'?'P/E':'P/B',current:code==='PE'?liveData.pe:liveData.pb,
+      status:null,value:null,unit:'TIMES',missingInputs:[]})),
+  ];
+  const report = [...interpretiveList].sort((a,b)=>jalaliKey(b.publishDate).localeCompare(jalaliKey(a.publishDate)))[0];
+  const goToRatio=(code:string)=>{
+    const url=instrumentUrl(instrument.instrumentId);
+    const slug=articleSlug(code);
+    url.hash='/symbols/'+instrument.instrumentId+'?tab=education&ratio='+encodeURIComponent(slug);
+    history.pushState(history.state,'',url);
+    setEducationTarget(slug);
+    setMainPage('education');
+  };
   const historicalRatiosTable = (data: typeof view.fundStore) => [
     { name: 'حاشیه سود خالص', data: data.netMarginData, unit: '٪' },
     { name: 'حاشیه سود عملیاتی', data: data.opMarginData, unit: '٪' },
     { name: 'بازده حقوق مالکانه (ROE)', data: data.roeData, unit: '٪' },
-    { name: efficiencyLabel, data: data.efficiencyData, unit: '٪' },
+    ...(showEfficiency ? [{ name: efficiencyLabel, data: data.efficiencyData, unit: '٪' }] : []),
     { name: 'نسبت P/B', data: data.pbData, unit: ' مرتبه' },
   ];
 
@@ -538,11 +583,12 @@ function Dashboard({ release, selectedSymbol, detail: publishedDetail, status, m
     { id: 'income_breakdown', label: 'ساختار سود و زیان', icon: Layers },
     { id: 'cash_flow', label: 'جریان نقد عملیاتی', icon: Activity },
     { id: 'balance_sheet', label: 'ترازنامه', icon: Building2 },
+    { id: 'pe_ratio', label: 'P/E', icon: Activity },
     { id: 'pb_ratio', label: 'P/B', icon: Activity },
     { id: 'net_margin', label: 'حاشیه سود خالص', icon: Percent },
     { id: 'op_margin', label: 'حاشیه سود عملیاتی', icon: Percent },
     { id: 'roe', label: 'ROE', icon: TrendingUp },
-    { id: 'efficiency', label: efficiencyLabel, icon: Target }
+    ...(showEfficiency ? [{ id: 'efficiency', label: efficiencyLabel, icon: Target }] : [])
   ];
 
   const avg1404Monthly = useMemo(() => {
@@ -551,7 +597,15 @@ function Dashboard({ release, selectedSymbol, detail: publishedDetail, status, m
     return Number((valid.reduce((s: number, d: any) => s + d.year1404, 0) / valid.length).toFixed(1));
   }, [view.fundStore.incomeData]);
 
-  const valUnit = currency === 'IRT' ? 'میلیارد تومان' : 'میلیون دلار';
+  const chartLegends:Record<string,[string,string][]>={
+    annual_income:[['#f59e0b','درآمد عملیاتی'],['#10b981','سود خالص']],
+    monthly_income:[['#6366f1','۱۴۰۳'],['#10b981','۱۴۰۴'],['#f59e0b','۱۴۰۵']],
+    income_breakdown:[['#f59e0b','درآمد عملیاتی'],['#ef4444','بهای تمام‌شده / هزینه'],['#3b82f6','سود عملیاتی'],['#10b981','سود خالص']],
+    cash_flow:[['#06b6d4','جریان نقد عملیاتی']],balance_sheet:[['#10b981','حقوق مالکانه'],['#f43f5e','کل بدهی‌ها']],
+    pe_ratio:[['#10b981','P/E پایان دوره']],pb_ratio:[['#8b5cf6','P/B']],op_margin:[['#3b82f6','حاشیه سود عملیاتی']],
+    roe:[['#f59e0b','بازده حقوق مالکانه']],efficiency:[['#ef4444',efficiencyLabel]],net_margin:[['#10b981','حاشیه سود خالص']],
+  };
+  const valUnit = currency === 'IRR' ? 'میلیارد ریال' : 'میلیون دلار';
 
   const formatNum = (num: any, decimals = 0) => {
     if (num === null || num === undefined || isNaN(num)) return '-';
@@ -663,6 +717,8 @@ function Dashboard({ release, selectedSymbol, detail: publishedDetail, status, m
               { id: 'disclosures', label: 'اطلاعات افشا شده شرکت', icon: BellRing },
               { id: 'valuation', label: 'ارزش‌گذاری جامع سهم', icon: Scale },
               { id: 'forecast', label: 'پیش‌بینی فروش و EPS', icon: Calculator },
+              { id: 'education', label: 'آموزش', icon: BookOpen },
+              { id: 'guide', label: 'راهنمای سایت', icon: LayoutDashboard },
               { id: 'fixtures', label: 'پیش‌نمایش داده آزمایشی', icon: Database }
             ].map((navItem) => {
               const Icon = navItem.icon;
@@ -756,8 +812,9 @@ function Dashboard({ release, selectedSymbol, detail: publishedDetail, status, m
               <span>• {localStatus?.text ?? status}</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span>دلار مبنا:</span>
-              <input type="number" value={fx1405} onChange={(e) => setFx1405(Number(e.target.value) || 1)} className={`w-24 px-2 py-0.5 rounded border text-xs font-bold text-amber-500 ${subCardStyle}`} dir="ltr" />
+              <span>دلار مبنا (ریال)</span>
+              <button type="button" aria-label="تاریخچه نرخ دلار" title="تاریخچه نرخ دلار" onClick={()=>setShowUsdHistory(true)} className="border rounded p-1"><BarChartIcon size={16}/></button>
+              <input aria-label="نرخ مبنای دلار به ریال" type="number" min={1} value={fx1405} onChange={(e) => setFx1405(Number(e.target.value)>0 ? Number(e.target.value) : DEFAULT_USD_IRR)} className={`w-24 px-2 py-0.5 rounded border text-xs font-bold text-amber-500 ${subCardStyle}`} dir="ltr" />
             </div>
           </div>
         </div>
@@ -876,6 +933,16 @@ function Dashboard({ release, selectedSymbol, detail: publishedDetail, status, m
 
         {/* TAB 1: OVERVIEW */}
         {mainPage === 'fixtures' && <div className={`p-6 ${cardStyle}`}><Suspense fallback={<p role="status">در حال بارگذاری پیش‌نمایش…</p>}><MarketFixtures key={release.manifest.releaseId} manifest={release.manifest} /></Suspense></div>}
+        {showUsdHistory && <UsdHistoryDialog rates={rates} onClose={()=>setShowUsdHistory(false)} />}
+        {mainPage === 'education' && <EducationAcademy target={educationTarget} onSelect={goToRatio}
+          manifest={release.manifest} instruments={instruments} rates={rates} prices={prices} eps={eps}/>}
+        {mainPage === 'guide' && <main className="max-w-7xl mx-auto w-full p-5">
+          <h2 className="font-bold text-xl mb-4">راهنمای سایت</h2>
+          <div className="grid md:grid-cols-2 gap-4">{guide.map(([title,copy])=>
+            <article key={title} className={`border rounded-xl p-5 ${cardStyle}`}>
+              <h3 className="font-bold mb-2">{title}</h3><p>{copy}</p>
+            </article>)}</div>
+        </main>}
         {mainPage === 'overview' && (
           <ErrorBoundary sectionName="معرفی شرکت و اطلاعات پایه">
             <main className="max-w-7xl w-full mx-auto px-4 md:px-6 mt-6 space-y-6 pb-12">
@@ -898,7 +965,7 @@ function Dashboard({ release, selectedSymbol, detail: publishedDetail, status, m
                     <span className={`text-2xl font-bold ${textHeading}`}>{formatNum(liveMetrics.marketCapToman, 0)}</span>
                     <span className={`text-xs mr-1.5 ${textMuted}`}>میلیارد تومان</span>
                   </div>
-                  <p className={`text-xs mt-2 ${textMuted}`}>معادل ${formatNum(liveMetrics.marketCapUSD, 1)}M</p>
+                  <p className={`text-xs mt-2 ${textMuted}`}>معادل ${formatNum(liveMetrics.marketCapUSD, 1)} میلیون دلار</p>
                 </div>
 
                 <div className={`rounded-2xl p-5 border relative overflow-hidden ${cardStyle}`}>
@@ -994,6 +1061,12 @@ function Dashboard({ release, selectedSymbol, detail: publishedDetail, status, m
                       ))}
                     </div>
                   </div>
+                  {['annual_income','monthly_income'].includes(activeTab) && <div className="flex flex-wrap gap-2 items-center mb-3" role="group" aria-label="واحد نمودار">
+                    {(['IRR','USD'] as const).map(unit=><button type="button" key={unit} aria-pressed={currency===unit}
+                      onClick={()=>setCurrency(unit)} className={`border rounded px-3 py-1 ${currency===unit?'bg-emerald-600 text-white':''}`}>{unit==='IRR'?'ریال':'دلار'}</button>)}
+                    <button type="button" onClick={()=>goToRatio('usd-adjustment')} className="border rounded px-3 py-1">آموزش دلاری‌سازی</button>
+                    {currency==='USD'&&<span className="text-sm">{activeTab==='monthly_income'?'مبنای تبدیل، آخرین نرخ ثبت‌شده در ماه است.':'مبنای تبدیل، میانگین نرخ ابتدا و انتهای دوره است.'}</span>}
+                  </div>}
                   {view.latestInterim && <aside className={`p-4 mb-4 border rounded-xl ${subCardStyle}`}>
                     <h3 className="font-bold text-sm">آخرین گزارش میاندوره‌ای ۱۴۰۵</h3>
                     <p className="mt-1 text-xs">
@@ -1010,6 +1083,17 @@ function Dashboard({ release, selectedSymbol, detail: publishedDetail, status, m
                     <p className="text-sm">مبلغ درآمد ماهانه در این نسخه منتشر نشده است.</p>}
                   {activeTab !== 'monthly_income' && scopedCharts.length === 0 &&
                     <p className="text-sm">صورت مالی برای دامنه انتخاب‌شده ثبت نشده است.</p>}
+                  <ChartGuide items={chartLegends[activeTab] ?? []}/>
+                  {(() => {
+                    const code = {pe_ratio:'PE',pb_ratio:'PB',net_margin:'NET_MARGIN',op_margin:'OPERATING_MARGIN',roe:'ROE',
+                      efficiency: detail?.sectorTemplate==='banking'?'BANK_COST_TO_INCOME':'COST_TO_REVENUE'}[activeTab as 'pe_ratio'|'pb_ratio'|'net_margin'|'op_margin'|'roe'|'efficiency'];
+                    return code && <button type="button" className="underline mt-2" onClick={()=>goToRatio(code)}>آموزش این نسبت</button>;
+                  })()}
+                  {['annual_income','monthly_income'].includes(activeTab) && <p className="text-sm">واحد نمودار {valUnit}</p>}
+                  {activeTab==='monthly_income' && currency==='IRR' && avg1404Monthly>0 && <p className="text-sm">خط‌چین سبز · میانگین ۱۴۰۴</p>}
+                  {activeTab !== 'monthly_income' && <p className="text-sm">دوره‌ها · {scopedCharts.map(chart=>fiscalScope[chart.scope]+' '+chart.timeline.filter(row=>row.statement).map(row=>row.year+' '+row.audit).join('، ')).join(' | ') || '—'}</p>}
+                  {activeTab === 'pe_ratio' && !scopedCharts.some(chart=>chart.timeline.some(row=>historicalPe(row.statement,prices[instrument.instrumentId]??[],eps)!==null)) &&
+                    <p className="text-sm">قیمت پایانی تاریخی یا سود هر سهم معتبر برای این دوره‌ها موجود نیست.</p>}
                   {(activeTab === 'monthly_income' ? hasPublishedMonthly ? [{ scope: null, data: view.fundStore, timeline: view.financialTimeline }] : [] : scopedCharts).map(chart =>
                     <div key={chart.scope ?? 'monthly'}>
                       {chart.scope && <h3 className="text-xs font-bold pt-4">دوره‌های مالی ۱۴۰۰ تا ۱۴۰۵ · {fiscalScope[chart.scope]}</h3>}
@@ -1021,16 +1105,16 @@ function Dashboard({ release, selectedSymbol, detail: publishedDetail, status, m
                           <XAxis dataKey="label" interval={0} height={54} tick={<FinancialPeriodTick fill={axisTickColor} />} />
                           <YAxis width={84} tickFormatter={formatChartNumber} tick={{ fill: axisTickColor }} label={{ value: valUnit, angle: -90, position: 'insideLeft', fill: axisTickColor }} />
                           <Tooltip content={<CustomTooltip unit={valUnit} darkMode={darkMode} />} />
-                          <Bar dataKey={currency === 'IRT' ? 'value' : 'usdValue'} name="درآمد عملیاتی" fill="url(#series-f59e0b)" radius={[4, 4, 0, 0]} maxBarSize={45} />
-                          <Line type="monotone" dataKey={currency === 'IRT' ? 'netProfit' : 'usdNetProfit'} name="سود خالص" stroke="#10b981" strokeWidth={3} />
+                          <Bar dataKey="revenueDisplay" name="درآمد عملیاتی" fill="url(#series-f59e0b)" radius={[4, 4, 0, 0]} maxBarSize={45} />
+                          <Line type="monotone" dataKey="profitDisplay" name="سود خالص" stroke="#10b981" strokeWidth={3} />
                         </ComposedChart>
                       ) : activeTab === 'monthly_income' ? (
-                        <BarChart data={view.fundStore.incomeData}>
+                        <BarChart data={monthlyIncomeForCurrency}>
                           <CartesianGrid strokeDasharray="2 5" vertical={false} stroke={gridStroke} />
                           <XAxis dataKey="month" tick={{ fill: axisTickColor }} />
-                          <YAxis width={84} tickFormatter={formatChartNumber} tick={{ fill: axisTickColor }} label={{ value: 'میلیارد تومان', angle: -90, position: 'insideLeft', fill: axisTickColor }} />
-                          <Tooltip content={<CustomTooltip unit="میلیارد تومان" darkMode={darkMode} />} />
-                          {avg1404Monthly > 0 && <ReferenceLine y={avg1404Monthly} stroke="#10b981" strokeDasharray="5 5" />}
+                          <YAxis width={84} tickFormatter={formatChartNumber} tick={{ fill: axisTickColor }} label={{ value: valUnit, angle: -90, position: 'insideLeft', fill: axisTickColor }} />
+                          <Tooltip content={<CustomTooltip unit={valUnit} darkMode={darkMode} />} />
+                          {currency==='IRR' && avg1404Monthly > 0 && <ReferenceLine y={avg1404Monthly*10} stroke="#10b981" strokeDasharray="5 5" />}
                           <Bar dataKey="year1403" name="۱۴۰۳" fill="url(#series-6366f1)" radius={[4, 4, 0, 0]} maxBarSize={28} />
                           <Bar dataKey="year1404" name="۱۴۰۴" fill="url(#series-10b981)" radius={[4, 4, 0, 0]} maxBarSize={28} />
                           <Bar dataKey="year1405" name="۱۴۰۵" fill="url(#series-f59e0b)" radius={[4, 4, 0, 0]} maxBarSize={28} />
@@ -1064,6 +1148,14 @@ function Dashboard({ release, selectedSymbol, detail: publishedDetail, status, m
                           <Bar dataKey="equity" name="حقوق مالکانه" fill="url(#series-10b981)" radius={[4, 4, 0, 0]} maxBarSize={38} />
                           <Bar dataKey="liabilities" name="کل بدهی‌ها" fill="url(#series-f43f5e)" radius={[4, 4, 0, 0]} maxBarSize={38} />
                         </BarChart>
+                      ) : activeTab === 'pe_ratio' ? (
+                        <LineChart data={chart.timeline.map(row=>({...row,pe:historicalPe(row.statement,prices[instrument.instrumentId]??[],eps)}))}>
+                          <CartesianGrid strokeDasharray="2 5" stroke={gridStroke}/>
+                          <XAxis dataKey="label" tick={{fill:axisTickColor}}/>
+                          <YAxis tick={{fill:axisTickColor}}/>
+                          <Tooltip content={<CustomTooltip unit="مرتبه" darkMode={darkMode}/>}/>
+                          <Line dataKey="pe" name="P/E پایان دوره" stroke="#10b981" strokeWidth={3}/>
+                        </LineChart>
                       ) : activeTab === 'pb_ratio' ? (
                         <LineChart data={chart.data.pbData}>
                           <CartesianGrid strokeDasharray="2 5" vertical={false} stroke={gridStroke} />
@@ -1115,13 +1207,13 @@ function Dashboard({ release, selectedSymbol, detail: publishedDetail, status, m
                   <h2 className={`text-base font-bold mb-4 ${textHeading}`}>نسبت‌های مالی کلیدی</h2>
                   <p className="text-xs mb-3">{view.scopeLabel ?? '—'}</p>
                   <div className="grid grid-cols-2 gap-3">
-                    {view.fundStore.ratiosDef.map(r => {
-                      const badge = r.status ? formatRatioBadge(r.status, r.value, r.unit, r.missingInputs) : null;
+                    {ratioCards.map(r => {
+                      const badge = r.status === 'not_applicable' ? {label:'غیرمرتبط با صنعت',style:'opacity-70'} : r.status === 'missing_input' && ['QUICK_RATIO','CURRENT_RATIO','CASH_RATIO','DSO','ROA'].includes(r.code) ? {label:'داده ترازنامه ناقص',style:'text-amber-500'} : r.status ? formatRatioBadge(r.status, r.value, r.unit, r.missingInputs) : null;
                       return (
-                      <div key={r.id} className={`p-3 rounded-xl border text-center ${subCardStyle}`}>
+                      <button type="button" onClick={()=>goToRatio(r.code)} key={r.id} className={`p-3 rounded-xl border text-center hover:border-emerald-500 ${subCardStyle}`}>
                         <span className={`text-[11px] block mb-1 ${textMuted}`}>{r.title}</span>
                         <span className="text-base font-bold" dir="ltr">{badge ? <span className={badge.style}>{badge.label}</span> : r.current == null ? '—' : String(r.current) + r.unit}</span>
-                      </div>
+                      </button>
                     ); })}
                   </div>
                 </section>
@@ -1183,6 +1275,9 @@ function Dashboard({ release, selectedSymbol, detail: publishedDetail, status, m
                     </button>
                   ))}
                 </div>
+                <AnalystSummary insight={(report && issuerInsights[report.id]) ?? issuerInsights.__latest__} />
+                {report && <p className="text-sm">مبنای تحلیل آخرین گزارش · {report.period}</p>}
+                <LocalNote key={instrument.issuerId} storageKey={instrument.issuerId+'_analytical_note_v1'} label="یادداشت تحلیلی کاربر"/>
                 {!interpretiveList.length && <p className="text-xs">گزارش تفسیری در این نسخه ثبت نشده است.</p>}
                 {interpretiveList[selectedPeriodIdx] && (
                   <div className={`p-5 rounded-xl border space-y-3.5 ${subCardStyle}`}>
@@ -1275,7 +1370,7 @@ function Dashboard({ release, selectedSymbol, detail: publishedDetail, status, m
                       <Sparkles className="w-5 h-5 text-amber-500" />
                       تفسیرگر هوشمند افشای اطلاعات بااهمیت {activeConfig.ticker} ({activeConfig.fullName}) (گروه الف و ب)
                     </h2>
-                    <p className={`text-xs mt-1 ${textMuted}`}>خلاصه‌سازی متن اطلاعیه‌ها به همراه تحلیل اثرگذاری بر سهم</p>
+                    <p className={`text-xs mt-1 ${textMuted}`}>۲۰ اطلاعیهٔ اخیر از ۱۲ ماه گذشته، همراه با تحلیل اثر و یادداشت کاربر</p>
                   </div>
                   <div className={`flex items-center p-1.5 rounded-xl border gap-1 ${subCardStyle}`}>
                     {(['all', 'الف', 'ب'] as const).map((g) => (
@@ -1327,6 +1422,8 @@ function Dashboard({ release, selectedSymbol, detail: publishedDetail, status, m
                         <span className="text-xs font-bold text-indigo-400 block mb-1">تفسیر به زبان ساده و اثر بر سهم:</span>
                         <p className={`text-xs md:text-sm leading-relaxed ${textMuted}`}>{item.aiTranslation ?? 'خلاصه تحلیلی ثبت نشده است.'}</p>
                       </div>
+                      <Materiality insight={issuerInsights[item.id]} assets={statementFact(materialityStatement(item.date),'TOTAL_ASSETS')} profit={statementFact(materialityStatement(item.date),'NET_PROFIT')}/>
+                      <LocalNote key={instrument.issuerId+item.id} storageKey={instrument.issuerId+'_disclosure_note_'+item.id} label="یادداشت کاربر برای این افشا"/>
                     </div>
                   ))
                 )}
@@ -1339,6 +1436,28 @@ function Dashboard({ release, selectedSymbol, detail: publishedDetail, status, m
         {mainPage === 'valuation' && (
           <ErrorBoundary sectionName="ارزش‌گذاری جامع سهم">
             <main className="max-w-7xl w-full mx-auto px-4 md:px-6 mt-6 space-y-6 pb-12">
+              {publishedCharts.map(chart=>{
+                const rows=chart.timeline.map(row=>({...row,...historicalValuation(row.statement,prices[instrument.instrumentId]??[],eps)}));
+                const multiples=[['pe','نسبت قیمت به سود (P/E)','#10b981'],['pb','نسبت قیمت به ارزش دفتری (P/B)','#8b5cf6'],['ps','نسبت قیمت به فروش (P/S)','#3b82f6']] as const;
+                return <section key={chart.scope} className={`border rounded-2xl p-4 ${cardStyle}`}>
+                  <h2 className="font-bold text-lg">تاریخچه نسبت‌های ارزش‌گذاری · {fiscalScope[chart.scope]}</h2>
+                  <p className="text-sm mb-4">مبنای قیمت، آخرین روز معاملاتی دوره است. ارقام میاندوره‌ای به کل سال تعمیم داده نشده‌اند. وقتی سود پایه گزارش نشده، سود خالص بر تعداد سهام پایان دوره تقسیم شده است.</p>
+                  <div className="grid xl:grid-cols-3 gap-5">{multiples.map(([key,title,color])=>
+                    <div key={key} className={`p-3 rounded-xl border ${subCardStyle}`}>
+                      <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-bold">{title}</h3><button type="button" className="underline text-sm" onClick={()=>goToRatio(key)}>آموزش این نسبت</button></div>
+                      {rows.some(row=>row[key]!==null)?<div className="h-56" dir="ltr"><ResponsiveContainer>
+                        <LineChart data={rows}>
+                          <CartesianGrid strokeDasharray="2 5" stroke={gridStroke}/>
+                          <XAxis dataKey="label" tick={<FinancialPeriodTick fill={axisTickColor}/>} height={52}/>
+                          <YAxis tickFormatter={formatChartNumber} tick={{fill:axisTickColor}} width={55}/>
+                          <Tooltip content={<CustomTooltip unit="مرتبه" darkMode={darkMode}/>}/>
+                          <Line dataKey={key} name={title} stroke={color} strokeWidth={2} dot={{r:3}}/>
+                        </LineChart>
+                      </ResponsiveContainer></div>:<p className="text-sm my-8">قیمت پایانی یا دادهٔ مالی لازم برای محاسبهٔ این نسبت موجود نیست.</p>}
+                      <ChartGuide items={[[color,title]]}/>
+                    </div>)}</div>
+                </section>;
+              })}
               <section className={`rounded-2xl border p-6 border-t-4 border-t-emerald-500 ${cardStyle}`}>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
                   <div>

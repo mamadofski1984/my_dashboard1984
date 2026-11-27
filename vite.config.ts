@@ -50,6 +50,11 @@ function releaseAssets(): Plugin {
         const file = new URL(fileName, publicRoot)
         if (existsSync(file)) emit(fileName, readFileSync(file))
       }
+      for (const name of ['usd_history.json', 'tsetmc_history.json', 'analyst_insights.json']) {
+        const fileName = 'data/' + name
+        const file = new URL(fileName, publicRoot)
+        if (existsSync(file)) emit(fileName, readFileSync(file))
+      }
       emit('favicon.svg', readFileSync(new URL('favicon.svg', publicRoot)))
     },
   }

@@ -1,3 +1,4 @@
+import { ChartGuide } from './DashboardAdditions';
 import { useState, useEffect, useMemo } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
@@ -400,6 +401,7 @@ export function ForecastTab({
                 </BarChart>
               </ResponsiveContainer>
             </div>
+            <ChartGuide items={ [['#10b981','فروش ثبت‌شده'],['#f59e0b','فروش سناریوی انتخابی'],['#475569','داده موجود نیست']] }/>
           </div>
 
           <div className={`mt-4 p-3.5 rounded-xl border text-xs ${subCardStyle}`}>

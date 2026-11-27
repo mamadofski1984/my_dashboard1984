@@ -4,8 +4,11 @@
 
 body {
   margin: 0;
+  font-family: "B Nazanin", BNazanin, Tahoma, sans-serif;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.75;
 }
-[data-theme] {font-family:Vazirmatn,"Segoe UI",Tahoma,sans-serif;font-variant-numeric:tabular-nums;line-height:1.65;color-scheme:dark;--profile:#15243b;--accent:#79baff}
+[data-theme] {font-family:'B Nazanin','BNazanin',Tahoma,sans-serif;font-variant-numeric:tabular-nums;line-height:1.65;color-scheme:dark;--profile:#15243b;--accent:#79baff}
 [data-theme=light]{color-scheme:light;--profile:#edf3fa;--accent:#28558c}
 [data-theme=emerald]{background:#071c1a;--profile:#10352e;--accent:#82dec1}
 [data-theme=emerald] :is(.bg-slate-900,.bg-slate-900\/95){background:#102c29;border-color:#284640}

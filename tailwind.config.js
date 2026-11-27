@@ -5,7 +5,7 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: { fontFamily: { sans: ["B Nazanin", "BNazanin", "Tahoma", "sans-serif"] } },
   },
   plugins: [],
 }

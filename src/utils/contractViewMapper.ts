@@ -85,7 +85,7 @@ export function mapContractDetail(detail: SymbolDetailData | null, requestedScop
     const audit = row?.isAudited === true ? 'حسابرسی‌شده' : row?.isAudited === false ? 'حسابرسی‌نشده' : 'حسابرسی نامشخص';
     const label = fiscalYear === 1405 && row
       ? `${year} (${row.periodMonths.toLocaleString('fa-IR')}ماهه، ${audit})` : year;
-    return { fiscalYear, year, label, value: money(row, 'REVENUE'), netProfit: money(row, 'NET_PROFIT'),
+    return { fiscalYear, year, label, statement: row, audit, value: money(row, 'REVENUE'), netProfit: money(row, 'NET_PROFIT'),
       cost: money(row, 'COST_OF_REVENUE'), opProfit: money(row, 'OPERATING_PROFIT'),
       cashFlow: money(row, 'OPERATING_CASH_FLOW'), equity: money(row, 'TOTAL_EQUITY'),
       liabilities: money(row, 'TOTAL_LIABILITIES') };

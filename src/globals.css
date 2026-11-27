@@ -1,0 +1,31 @@
+@font-face {
+  font-family: 'B Nazanin';
+  src: local('B Nazanin Bold'), local('BNazanin Bold'),
+    url('https://cdn.jsdelivr.net/gh/artbijan/Web-Font@main/BNazaninBold.woff2') format('woff2');
+  font-weight: 700 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'BNazanin';
+  src: local('BNazanin'), url('https://cdn.jsdelivr.net/gh/artbijan/Web-Font@main/IRNazanin.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'B Nazanin';
+  src: local('B Nazanin'), local('BNazanin'),
+    url('https://www.yourfreefont.com/catalog-subset/b-nazanin-font.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+html, body, #root, [data-theme], .fd-home,
+h1, h2, h3, h4, h5, h6, button, input, select, textarea, table,
+[role="tooltip"], .recharts-wrapper, .recharts-wrapper svg text {
+  font-family: 'B Nazanin', 'BNazanin', Tahoma, sans-serif !important;
+  font-variant-numeric: tabular-nums;
+}

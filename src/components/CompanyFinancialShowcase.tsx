@@ -1,3 +1,4 @@
+import { ChartGuide } from './DashboardAdditions';
 import { useMemo, useState } from 'react';
 import type { SymbolDetailData } from '../types/marketContract';
 import { mapContractDetail } from '../utils/contractViewMapper';
@@ -44,6 +45,8 @@ export default function CompanyFinancialShowcase({detail,ticker,cardStyle}:{
           </button>;})}
         </div>
       </div>
+      <ChartGuide items={ [['#10b981','گزارش سالانه'],['#f59e0b','گزارش میاندوره‌ای']] }/>
+      <p className="text-xs">{timeline.filter(row=>row.statement).map(row=>row.year+' '+row.audit).join('، ')}</p>
       <p role="status" className="text-sm border-t border-current/10 pt-3">{point.label} · <strong>{fmt(point[metric])}</strong> میلیارد تومان</p>
     </div>
     <details className={`border rounded-2xl p-5 ${cardStyle}`}><summary className="cursor-pointer">سوابق گزارش و ارقام هر دوره</summary>

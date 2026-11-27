@@ -1,0 +1,152 @@
+[
+  {
+    "ticker": "اخابر",
+    "industry": "مخابرات",
+    "generated_at": "2026-11-21T14:09:16.940296",
+    "counts": {
+      "monthly_sales": 55,
+      "financial_statements": 19,
+      "important_disclosures": 119,
+      "interpretive_reports": 6
+    },
+    "code": "AKHABER",
+    "codalName": "مخابرات ایران",
+    "displayName": "مخابرات ایران",
+    "sectorTemplate": "other"
+  },
+  {
+    "ticker": "خودرو",
+    "industry": "خودرو و ساخت قطعات",
+    "generated_at": "2026-11-21T14:09:34.566482",
+    "counts": {
+      "monthly_sales": 54,
+      "financial_statements": 18,
+      "important_disclosures": 77,
+      "interpretive_reports": 6
+    },
+    "code": "KHODRO",
+    "codalName": "ایران خودرو",
+    "displayName": "ایران خودرو",
+    "sectorTemplate": "manufacturing"
+  },
+  {
+    "ticker": "دعبید",
+    "industry": "مواد و محصولات دارویی",
+    "generated_at": "2026-11-21T14:09:49.532608",
+    "counts": {
+      "monthly_sales": 55,
+      "financial_statements": 19,
+      "important_disclosures": 61,
+      "interpretive_reports": 5
+    },
+    "code": "DABID",
+    "codalName": "داروسازی دکتر عبیدی",
+    "displayName": "داروسازی دکتر عبیدی",
+    "sectorTemplate": "manufacturing"
+  },
+  {
+    "ticker": "شستا",
+    "industry": "شرکتهای چند رشته ای صنعتی",
+    "generated_at": "2026-11-21T14:10:08.545764",
+    "counts": {
+      "monthly_sales": 0,
+      "financial_statements": 20,
+      "important_disclosures": 12,
+      "interpretive_reports": 5
+    },
+    "code": "SHASTA",
+    "codalName": "سرمایه گذاری تامین اجتماعی",
+    "displayName": "سرمایه گذاری تامین اجتماعی",
+    "sectorTemplate": "holding"
+  },
+  {
+    "ticker": "فملی",
+    "industry": "استخراج کانه های فلزی",
+    "generated_at": "2026-11-21T14:10:28.413663",
+    "counts": {
+      "monthly_sales": 54,
+      "financial_statements": 18,
+      "important_disclosures": 17,
+      "interpretive_reports": 6
+    },
+    "code": "FMLI",
+    "codalName": "ملی صنایع مس ایران",
+    "displayName": "ملی صنایع مس ایران",
+    "sectorTemplate": "manufacturing"
+  },
+  {
+    "ticker": "فولاد",
+    "industry": "فلزات اساسی",
+    "generated_at": "2026-11-21T14:10:46.900834",
+    "counts": {
+      "monthly_sales": 55,
+      "financial_statements": 16,
+      "important_disclosures": 43,
+      "interpretive_reports": 6
+    },
+    "code": "FOOLAD",
+    "codalName": "فولاد مبارکه اصفهان",
+    "displayName": "فولاد مبارکه اصفهان",
+    "sectorTemplate": "manufacturing"
+  },
+  {
+    "ticker": "نان",
+    "industry": "محصولات غذایی و آشامیدنی به جز قند و شکر",
+    "generated_at": "2026-11-21T14:11:03.159805",
+    "counts": {
+      "monthly_sales": 41,
+      "financial_statements": 13,
+      "important_disclosures": 13,
+      "interpretive_reports": 4
+    },
+    "code": "NAN",
+    "codalName": "صنایع غذایی رضوی",
+    "displayName": "شرکت نان رضوی",
+    "sectorTemplate": "manufacturing"
+  },
+  {
+    "ticker": "نوری",
+    "industry": "محصولات شیمیایی",
+    "generated_at": "2026-11-21T14:11:26.500594",
+    "counts": {
+      "monthly_sales": 55,
+      "financial_statements": 19,
+      "important_disclosures": 50,
+      "interpretive_reports": 6
+    },
+    "code": "NOURI",
+    "codalName": "پتروشیمی نوری",
+    "displayName": "پتروشیمی نوری",
+    "sectorTemplate": "manufacturing"
+  },
+  {
+    "ticker": "وبملت",
+    "industry": "بانکها و موسسات اعتباری",
+    "generated_at": "2026-11-21T14:11:38.739937",
+    "counts": {
+      "monthly_sales": 54,
+      "financial_statements": 18,
+      "important_disclosures": 79,
+      "interpretive_reports": 6
+    },
+    "code": "BMLT",
+    "codalName": "بانک ملت",
+    "displayName": "بانک ملت",
+    "sectorTemplate": "banking"
+  },
+  {
+    "ticker": "کالا",
+    "industry": "فعالیتهای کمکی به نهادهای مالی واسط",
+    "generated_at": "2026-11-21T14:11:44.720127",
+    "counts": {
+      "monthly_sales": 55,
+      "financial_statements": 18,
+      "important_disclosures": 28,
+      "interpretive_reports": 6
+    },
+    "code": "KALA",
+    "codalName": "بورس کالای ایران",
+    "displayName": "بورس کالای ایران",
+    "sectorTemplate": "exchange_service"
+  }
+]
